@@ -4,12 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Card } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 
 const currencies = ['CNY', 'USD', 'HKD', 'JPY', 'EUR', 'GBP'];
 
 export default function SettingsScreen() {
   const [defaultCurrency, setDefaultCurrency] = useState('CNY');
-  const [jpyRate, setJpyRate] = useState<number | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => { loadSettings(); }, []);
 
@@ -24,6 +25,35 @@ export default function SettingsScreen() {
     setDefaultCurrency(currency);
     await AsyncStorage.setItem('@assets_tracker/settings', JSON.stringify({ defaultCurrency: currency }));
     Alert.alert('成功', `默认货币已设置为 ${currency}`);
+  };
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      const assets = await AsyncStorage.getItem('@assets_tracker/assets');
+      const investments = await AsyncStorage.getItem('@assets_tracker/investments');
+      const settings = await AsyncStorage.getItem('@assets_tracker/settings');
+      
+      const exportData = {
+        version: '1.0.0',
+        exportTime: new Date().toISOString(),
+        assets: assets ? JSON.parse(assets) : [],
+        investments: investments ? JSON.parse(investments) : [],
+        settings: settings ? JSON.parse(settings) : {},
+      };
+      
+      const jsonStr = JSON.stringify(exportData, null, 2);
+      await Clipboard.setStringAsync(jsonStr);
+      Alert.alert('导出成功', `数据已复制到剪贴板，共 ${assets ? JSON.parse(assets).length : 0} 条资产`);
+    } catch (e) {
+      Alert.alert('导出失败', '无法导出数据，请重试');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportData = () => {
+    Alert.alert('导入数据', '当前版本暂不支持此功能');
   };
 
   const handleClearData = () => {
@@ -54,9 +84,22 @@ export default function SettingsScreen() {
 
       <Card style={styles.card}>
         <Card.Content>
+          <Text style={styles.sectionTitle}>数据备份</Text>
+          <Text style={styles.sectionDesc}>导出或导入资产数据</Text>
+          <TouchableOpacity style={styles.exportBtn} onPress={handleExportData} disabled={isExporting}>
+            <Text style={styles.exportBtnText}>{isExporting ? '导出中...' : '📤 导出数据备份'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.importBtn} onPress={handleImportData}>
+            <Text style={styles.importBtnText}>📥 导入数据备份</Text>
+          </TouchableOpacity>
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.card}>
+        <Card.Content>
           <Text style={styles.sectionTitle}>数据管理</Text>
           <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
-            <Text style={styles.dangerBtnText}>清除所有数据</Text>
+            <Text style={styles.dangerBtnText}>🗑️ 清除所有数据</Text>
           </TouchableOpacity>
         </Card.Content>
       </Card>
@@ -84,8 +127,12 @@ const styles = StyleSheet.create({
   currencyBtnActive: { backgroundColor: '#6366f1' },
   currencyBtnText: { color: '#888', fontSize: 14 },
   currencyBtnTextActive: { color: '#fff', fontWeight: '600' },
-  dangerBtn: { backgroundColor: '#ef4444', paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  dangerBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  exportBtn: { backgroundColor: '#6366f1', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginBottom: 12 },
+  exportBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  importBtn: { backgroundColor: '#252540', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginBottom: 12 },
+  importBtnText: { color: '#00d9ff', fontSize: 15, fontWeight: '600' },
+  dangerBtn: { backgroundColor: '#ef4444', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  dangerBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
   aboutTitle: { color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center' },
   aboutVersion: { color: '#888', fontSize: 12, marginTop: 4, textAlign: 'center' },
   aboutDesc: { color: '#666', fontSize: 12, marginTop: 8, textAlign: 'center' },
