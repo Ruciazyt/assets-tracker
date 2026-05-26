@@ -1,0 +1,23 @@
+{
+  "name": "assets-tracker-app",
+  "version": "1.0.0",
+  "description": "个人资产追踪器 - 支持流动资金、固定资产、理财产品（黄金、基金、A股、港股）",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "android:init": "npx cap add android && npx cap sync android",
+    "android:build": "npm run build && npx cap sync android",
+    "android:apk": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/cli": "^6.1.0",
+    "@capacitor/core": "^6.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.1.0"
+  }
+}

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Assets Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #16213e;
+      color: #fff;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    .header {
+      background: #1a1a2e;
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header h1 { font-size: 18px; color: #00d9ff; }
+    .header .time { font-size: 12px; color: #888; }
+    
+    .card {
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 16px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .total-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #fff;
+    }
+    .pnl-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .pnl-card {
+      flex: 1;
+      background: #2a2a4e;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .pnl-label { font-size: 12px; color: #888; }
+    .pnl-value { font-size: 18px; font-weight: bold; margin-top: 4px; }
+    .green { color: #4ade80; }
+    .red { color: #f87171; }
+    
+    .section-title {
+      font-size: 14px;
+      color: #888;
+      margin: 16px 16px 8px;
+    }
+    
+    .asset-list { padding: 0 16px; }
+    .asset-item {
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .asset-name { font-size: 16px; font-weight: 500; }
+    .asset-type { font-size: 12px; color: #888; margin-top: 4px; }
+    .asset-amount { font-size: 18px; font-weight: bold; text-align: right; }
+    .asset-pnl { font-size: 12px; margin-top: 4px; text-align: right; }
+    
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1a1a2e;
+      display: flex;
+      border-top: 1px solid #2a2a4e;
+      padding: 8px 0;
+    }
+    .tab-item {
+      flex: 1;
+      text-align: center;
+      padding: 8px;
+      color: #888;
+      font-size: 12px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .tab-item.active { color: #00d9ff; }
+    .tab-item svg { width: 24px; height: 24px; margin-bottom: 4px; }
+    
+    .fab {
+      position: fixed;
+      bottom: 80px;
+      right: 16px;
+      width: 56px;
+      height: 56px;
+      background: #00d9ff;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1a1a2e;
+      font-size: 28px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(0,217,255,0.4);
+      cursor: pointer;
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: flex-end;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: #1a1a2e;
+      width: 100%;
+      border-radius: 16px 16px 0 0;
+      padding: 24px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-title { font-size: 18px; font-weight: bold; }
+    .modal-close { font-size: 24px; color: #888; cursor: pointer; }
+    
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 14px; color: #888; margin-bottom: 8px; display: block; }
+    .form-input {
+      width: 100%;
+      background: #2a2a4e;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      color: #fff;
+      font-size: 16px;
+    }
+    .form-input:focus { outline: 2px solid #00d9ff; }
+    
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+    .btn-primary { background: #00d9ff; color: #1a1a2e; }
+    .btn-secondary { background: #2a2a4e; color: #888; }
+    
+    .chip-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .chip {
+      padding: 8px 16px;
+      background: #2a2a4e;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .chip.active { background: #00d9ff; color: #1a1a2e; }
+    
+    .empty { text-align: center; padding: 40px; color: #888; }
+    
+    .fx-rate {
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .fx-label { color: #888; font-size: 14px; }
+    .fx-value { font-size: 20px; font-weight: bold; }
+    
+    .holding-item {
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .holding-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .holding-name { font-size: 16px; font-weight: 500; }
+    .holding-tag {
+      background: #2a2a4e;
+      color: #00d9ff;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+    }
+    .holding-row { display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px solid #2a2a4e; }
+    .holding-key { color: #555; font-size: 12px; }
+    .holding-val { font-size: 14px; }
+    
+    .screen { display: none; }
+    .screen.active { display: block; }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <h1>💰 Assets Tracker</h1>
+    <span class="time" id="currentTime">--:--</span>
+  </div>
+
+  <!-- Home Screen -->
+  <div id="homeScreen" class="screen active">
+    <div class="card">
+      <div class="pnl-label">总资产</div>
+      <div class="total-value" id="totalValue">¥0.00</div>
+    </div>
+    
+    <div class="pnl-row">
+      <div class="pnl-card">
+        <div class="pnl-label">今日盈亏</div>
+        <div class="pnl-value green" id="dailyPnl">+¥0.00</div>
+      </div>
+      <div class="pnl-card">
+        <div class="pnl-label">累计收益</div>
+        <div class="pnl-value green" id="totalPnl">+¥0.00</div>
+      </div>
+    </div>
+    
+    <div class="fx-rate">
+      <span class="fx-label">💱 日元汇率 (JPY/CNY)</span>
+      <span class="fx-value" id="jpyRate">0.0465</span>
+    </div>
+    
+    <div class="section-title">资产分布</div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;">
+        <div>
+          <div class="pnl-label">流动资金</div>
+          <div style="font-size:18px;font-weight:600;margin-top:4px;" id="cashTotal">¥0.00</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="pnl-label">理财产品</div>
+          <div style="font-size:18px;font-weight:600;margin-top:4px;" id="invTotal">¥0.00</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="section-title">理财持仓</div>
+    <div id="holdingsList" class="asset-list"></div>
+  </div>
+
+  <!-- Assets Screen -->
+  <div id="assetsScreen" class="screen">
+    <div class="section-title">流动资金 & 固定资产</div>
+    <div id="assetsList" class="asset-list"></div>
+  </div>
+
+  <!-- Investments Screen -->
+  <div id="investmentsScreen" class="screen">
+    <div class="section-title">理财产品</div>
+    <div id="investmentsList" class="holding-list" style="padding:0 16px;"></div>
+  </div>
+
+  <!-- Settings Screen -->
+  <div id="settingsScreen" class="screen">
+    <div class="card">
+      <div style="font-size:20px;font-weight:bold;">关于</div>
+      <div style="color:#00d9ff;margin-top:4px;">Assets Tracker v1.0.0</div>
+      <div style="color:#888;margin-top:8px;font-size:14px;">个人资产追踪器</div>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;color:#888;margin-bottom:8px;">数据管理</div>
+      <button class="btn btn-secondary" onclick="clearAllData()" style="margin-top:0;">清空所有数据</button>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;color:#888;margin-bottom:8px;">数据来源</div>
+      <div style="color:#aaa;font-size:13px;line-height:22px;">
+        • 黄金价格: 东方财富现货金价<br>
+        • A股行情: 东方财富实时行情<br>
+        • 港股行情: 东方财富港股数据<br>
+        • 日元汇率: 基于 USD/CNY 换算
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="switchTab('home')">
+      <div>📊</div>
+      总览
+    </div>
+    <div class="tab-item" onclick="switchTab('assets')">
+      <div>💼</div>
+      资产
+    </div>
+    <div class="tab-item" onclick="switchTab('investments')">
+      <div>📈</div>
+      理财
+    </div>
+    <div class="tab-item" onclick="switchTab('settings')">
+      <div>⚙️</div>
+      设置
+    </div>
+  </div>
+
+  <!-- FAB -->
+  <div class="fab" onclick="showAddModal()">+</div>
+
+  <!-- Add Modal -->
+  <div id="addModal" class="modal" onclick="if(event.target==this)closeModal()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">添加内容</span>
+        <span class="modal-close" onclick="closeModal()">×</span>
+      </div>
+      
+      <div class="chip-group">
+        <div class="chip active" onclick="setAddType('asset')" id="chipAsset">资产</div>
+        <div class="chip" onclick="setAddType('investment')" id="chipInvestment">理财</div>
+      </div>
+      
+      <div id="assetForm">
+        <div class="form-group">
+          <label class="form-label">类型</label>
+          <div class="chip-group">
+            <div class="chip active" onclick="setAssetSubtype('cash')" id="subCash">流动资金</div>
+            <div class="chip" onclick="setAssetSubtype('fixed')" id="subFixed">固定资产</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">名称</label>
+          <input class="form-input" id="assetName" placeholder="例如：招商银行卡">
+        </div>
+        <div class="form-group">
+          <label class="form-label">金额 (CNY)</label>
+          <input class="form-input" id="assetAmount" type="number" placeholder="0.00">
+        </div>
+        <button class="btn btn-primary" onclick="saveAsset()">保存资产</button>
+      </div>
+      
+      <div id="investmentForm" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">产品类型</label>
+          <div class="chip-group">
+            <div class="chip" onclick="setInvSubtype('gold')" id="invGold">黄金</div>
+            <div class="chip" onclick="setInvSubtype('fund')" id="invFund">基金</div>
+            <div class="chip" onclick="setInvSubtype('cn-stock')" id="invCN">A股</div>
+            <div class="chip" onclick="setInvSubtype('hk-stock')" id="invHK">港股</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">产品名称</label>
+          <input class="form-input" id="invName" placeholder="例如：Au99.99纸黄金">
+        </div>
+        <div class="form-group">
+          <label class="form-label">产品代码 (可选)</label>
+          <input class="form-input" id="invCode" placeholder="例如：600539">
+        </div>
+        <div class="form-group">
+          <label class="form-label">当前市值 (CNY)</label>
+          <input class="form-input" id="invAmount" type="number" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">总成本 (CNY)</label>
+          <input class="form-input" id="invCost" type="number" placeholder="买入时的总成本">
+        </div>
+        <button class="btn btn-primary" onclick="saveInvestment()">保存理财</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 数据存储
+    const API_KEY = 'mkt_O0QdJ9OZ6q7hd8arHSNNMj6hZOCJ0PQ_QacRAKJdasA';
+    const BASE_URL = 'https://mkapi2.dfcfs.com/finskillshub/api/claw/query';
+    
+    let assets = [];
+    let investments = [];
+    let jpyRate = 0.0465;
+    
+    let addType = 'asset';
+    let assetSubtype = 'cash';
+    let invSubtype = 'gold';
+    
+    // 初始化
+    function init() {
+      loadData();
+      updateUI();
+      updateTime();
+      setInterval(updateTime, 1000);
+      fetchMarketData();
+      setInterval(fetchMarketData, 30000);
+    }
+    
+    function loadData() {
+      const assetsData = localStorage.getItem('assets');
+      const invData = localStorage.getItem('investments');
+      if (assetsData) assets = JSON.parse(assetsData);
+      if (invData) investments = JSON.parse(invData);
+    }
+    
+    function saveData() {
+      localStorage.setItem('assets', JSON.stringify(assets));
+      localStorage.setItem('investments', JSON.stringify(investments));
+    }
+    
+    function updateTime() {
+      document.getElementById('currentTime').textContent = new Date().toLocaleTimeString('zh-CN');
+    }
+    
+    function updateUI() {
+      const totalAssets = assets.reduce((s, a) => s + a.amount, 0);
+      const totalInv = investments.reduce((s, i) => s + i.amount, 0);
+      const total = totalAssets + totalInv;
+      
+      document.getElementById('totalValue').textContent = formatCurrency(total);
+      document.getElementById('cashTotal').textContent = formatCurrency(totalAssets);
+      document.getElementById('invTotal').textContent = formatCurrency(totalInv);
+      
+      const dailyPnl = investments.reduce((s, i) => s + (i.dailyPnl || 0), 0);
+      const totalPnl = investments.reduce((s, i) => s + (i.totalPnl || 0), 0);
+      
+      document.getElementById('dailyPnl').textContent = formatCurrency(dailyPnl);
+      document.getElementById('dailyPnl').className = 'pnl-value ' + (dailyPnl >= 0 ? 'green' : 'red');
+      
+      document.getElementById('totalPnl').textContent = formatCurrency(totalPnl);
+      document.getElementById('totalPnl').className = 'pnl-value ' + (totalPnl >= 0 ? 'green' : 'red');
+      
+      document.getElementById('jpyRate').textContent = jpyRate.toFixed(4);
+      
+      // 资产列表
+      const assetsList = document.getElementById('assetsList');
+      if (assets.length === 0) {
+        assetsList.innerHTML = '<div class="empty">暂无资产<br><span style="font-size:12px;color:#555;">点击下方按钮添加</span></div>';
+      } else {
+        assetsList.innerHTML = assets.map(a => `
+          <div class="asset-item">
+            <div>
+              <div class="asset-name">${a.name}</div>
+              <div class="asset-type">${a.subtype === 'cash' ? '💵 流动资金' : '🏠 固定资产'}</div>
+            </div>
+            <div>
+              <div class="asset-amount">${formatCurrency(a.amount)}</div>
+              <div style="text-align:right;font-size:12px;color:#888;">${a.currency}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      // 理财列表
+      const invList = document.getElementById('investmentsList');
+      if (investments.length === 0) {
+        invList.innerHTML = '<div class="empty">暂无持仓<br><span style="font-size:12px;color:#555;">点击下方按钮添加</span></div>';
+      } else {
+        invList.innerHTML = investments.map(i => `
+          <div class="holding-item">
+            <div class="holding-header">
+              <div>
+                <div class="holding-name">${i.name}</div>
+                ${i.code ? '<div style="font-size:12px;color:#888;">' + i.code + '</div>' : ''}
+              </div>
+              <span class="holding-tag">${getInvTypeName(i.subtype)}</span>
+            </div>
+            <div class="holding-row">
+              <span class="holding-key">市值</span>
+              <span class="holding-val">${formatCurrency(i.amount)}</span>
+            </div>
+            <div class="holding-row">
+              <span class="holding-key">成本</span>
+              <span class="holding-val">${formatCurrency(i.cost)}</span>
+            </div>
+            <div class="holding-row">
+              <span class="holding-key">今日盈亏</span>
+              <span class="holding-val ${i.dailyPnl >= 0 ? 'green' : 'red'}">${formatCurrency(i.dailyPnl)} (${i.dailyReturn?.toFixed(2) || 0}%)</span>
+            </div>
+            <div class="holding-row">
+              <span class="holding-key">累计收益</span>
+              <span class="holding-val ${i.totalPnl >= 0 ? 'green' : 'red'}">${formatCurrency(i.totalPnl)}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      // 持仓摘要
+      const holdingsList = document.getElementById('holdingsList');
+      if (investments.length > 0) {
+        holdingsList.innerHTML = investments.slice(0, 3).map(i => `
+          <div class="asset-item">
+            <div>
+              <div class="asset-name">${i.name}</div>
+              <div class="asset-type">${getInvTypeName(i.subtype)}</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="asset-amount">${formatCurrency(i.amount)}</div>
+              <div class="asset-pnl ${i.dailyPnl >= 0 ? 'green' : 'red'}">${formatCurrency(i.dailyPnl)}</div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        holdingsList.innerHTML = '<div class="empty" style="padding:20px;">暂无理财持仓</div>';
+      }
+    }
+    
+    function formatCurrency(amount) {
+      const sign = amount >= 0 ? '' : '-';
+      return sign + '¥' + Math.abs(amount).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    
+    function getInvTypeName(subtype) {
+      const names = { gold: '🥇 黄金', yuebao: '💰 余额宝', fund: '📊 基金', 'cn-stock': '🇨🇳 A股', 'hk-stock': '🇭🇰 港股' };
+      return names[subtype] || subtype;
+    }
+    
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-item').forEach((el, i) => {
+        el.classList.toggle('active', ['home', 'assets', 'investments', 'settings'][i] === tab);
+      });
+      document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+      document.getElementById(tab + 'Screen').classList.add('active');
+    }
+    
+    function showAddModal() {
+      document.getElementById('addModal').classList.add('active');
+    }
+    
+    function closeModal() {
+      document.getElementById('addModal').classList.remove('active');
+    }
+    
+    function setAddType(type) {
+      addType = type;
+      document.getElementById('chipAsset').classList.toggle('active', type === 'asset');
+      document.getElementById('chipInvestment').classList.toggle('active', type === 'investment');
+      document.getElementById('assetForm').style.display = type === 'asset' ? 'block' : 'none';
+      document.getElementById('investmentForm').style.display = type === 'investment' ? 'block' : 'none';
+    }
+    
+    function setAssetSubtype(subtype) {
+      assetSubtype = subtype;
+      document.getElementById('subCash').classList.toggle('active', subtype === 'cash');
+      document.getElementById('subFixed').classList.toggle('active', subtype === 'fixed');
+    }
+    
+    function setInvSubtype(subtype) {
+      invSubtype = subtype;
+      ['gold', 'fund', 'cn-stock', 'hk-stock'].forEach(s => {
+        document.getElementById('inv' + s.charAt(0).toUpperCase() + s.slice(1).replace('-', '')).classList.toggle('active', s === subtype);
+      });
+    }
+    
+    function saveAsset() {
+      const name = document.getElementById('assetName').value.trim();
+      const amount = parseFloat(document.getElementById('assetAmount').value);
+      
+      if (!name) { alert('请输入名称'); return; }
+      if (!amount || amount <= 0) { alert('请输入有效金额'); return; }
+      
+      assets.push({
+        id: Date.now(),
+        type: assetSubtype,
+        name,
+        amount,
+        currency: 'CNY'
+      });
+      
+      saveData();
+      updateUI();
+      closeModal();
+      clearAssetForm();
+    }
+    
+    function saveInvestment() {
+      const name = document.getElementById('invName').value.trim();
+      const code = document.getElementById('invCode').value.trim();
+      const amount = parseFloat(document.getElementById('invAmount').value);
+      const cost = parseFloat(document.getElementById('invCost').value);
+      
+      if (!name) { alert('请输入名称'); return; }
+      if (!amount || amount <= 0) { alert('请输入市值'); return; }
+      if (!cost || cost <= 0) { alert('请输入成本'); return; }
+      
+      investments.push({
+        id: Date.now(),
+        subtype: invSubtype,
+        name,
+        code: code || undefined,
+        amount,
+        cost,
+        lastPrice: amount / cost,
+        dailyPnl: 0,
+        totalPnl: amount - cost,
+        dailyReturn: 0
+      });
+      
+      saveData();
+      updateUI();
+      closeModal();
+      clearInvForm();
+    }
+    
+    function clearAssetForm() {
+      document.getElementById('assetName').value = '';
+      document.getElementById('assetAmount').value = '';
+    }
+    
+    function clearInvForm() {
+      document.getElementById('invName').value = '';
+      document.getElementById('invCode').value = '';
+      document.getElementById('invAmount').value = '';
+      document.getElementById('invCost').value = '';
+    }
+    
+    function clearAllData() {
+      if (confirm('确定要清空所有数据吗？此操作不可撤销。')) {
+        assets = [];
+        investments = [];
+        saveData();
+        updateUI();
+      }
+    }
+    
+    // 获取市场数据
+    async function fetchMarketData() {
+      // 获取日元汇率
+      try {
+        const resp = await fetch(BASE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': API_KEY },
+          body: JSON.stringify({ toolQuery: '美元兑人民币 USD/CNY 汇率 最新' })
+        });
+        const json = await resp.json();
+        const data = json?.data?.searchDataResultDTO?.dataTableDTOList;
+        if (data && data[0]?.rawTable?.f2?.[0]) {
+          const usdCny = parseFloat(data[0].rawTable.f2[0]);
+          jpyRate = parseFloat((usdCny / 150).toFixed(4));
+          document.getElementById('jpyRate').textContent = jpyRate.toFixed(4);
+        }
+      } catch (e) {
+        console.log('FX fetch failed:', e);
+      }
+    }
+    
+    init();
+  </script>
+</body>
+</html>
