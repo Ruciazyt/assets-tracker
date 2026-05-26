@@ -13,6 +13,7 @@ export default function AddAssetScreen() {
   const [type, setType] = useState<'cash' | 'fixed'>('cash');
   const [subtype, setSubtype] = useState('bank');
   const [name, setName] = useState('');
+  const [note, setNote] = useState('');
   const [amount, setAmount] = useState('');
 
   const subtypes = type === 'cash' ? cashSubtypes : fixedSubtypes;
@@ -21,7 +22,17 @@ export default function AddAssetScreen() {
     if (!name.trim()) { Alert.alert('错误', '请输入资产名称'); return; }
     if (!amount || parseFloat(amount) <= 0) { Alert.alert('错误', '请输入有效金额'); return; }
 
-    const asset = { id: Date.now().toString(), type, subtype, name: name.trim(), amount: parseFloat(amount), currency: 'CNY' };
+    const asset = {
+      id: Date.now().toString(),
+      type,
+      subtype,
+      name: name.trim(),
+      amount: parseFloat(amount),
+      note: note.trim() || undefined,
+      currency: 'CNY',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
     const existing = await AsyncStorage.getItem('@assets_tracker/assets');
     const assets = existing ? JSON.parse(existing) : [];
     assets.push(asset);
@@ -39,6 +50,8 @@ export default function AddAssetScreen() {
           <SegmentedButtons value={subtype} onValueChange={setSubtype} buttons={subtypes.map(s => ({ value: s.value, label: s.label }))} style={styles.segmented} />
           <Text style={styles.label}>资产名称</Text>
           <TextInput value={name} onChangeText={setName} placeholder="例如：招商银行储蓄卡" placeholderTextColor="#555" style={styles.input} mode="outlined" outlineColor="#2a2a4e" activeOutlineColor="#00d9ff" textColor="#fff" />
+          <Text style={styles.label}>备注 (可选)</Text>
+          <TextInput value={note} onChangeText={setNote} placeholder="添加备注信息" placeholderTextColor="#555" style={[styles.input, styles.noteInput]} mode="outlined" outlineColor="#2a2a4e" activeOutlineColor="#00d9ff" textColor="#fff" multiline numberOfLines={2} />
           <Text style={styles.label}>金额 (CNY)</Text>
           <TextInput value={amount} onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#555" keyboardType="decimal-pad" style={styles.input} mode="outlined" outlineColor="#2a2a4e" activeOutlineColor="#00d9ff" textColor="#fff" />
         </Card.Content>
@@ -55,5 +68,6 @@ const styles = StyleSheet.create({
   label: { color: '#888', fontSize: 14, marginTop: 16, marginBottom: 8 },
   segmented: { marginBottom: 8 },
   input: { backgroundColor: '#1a1a2e', marginBottom: 8 },
+  noteInput: { minHeight: 60 },
   saveBtn: { marginTop: 16 },
 });
