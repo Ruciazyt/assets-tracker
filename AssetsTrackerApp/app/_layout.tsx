@@ -6,6 +6,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
+  const { colors } = useTheme();
   const icons: Record<string, string> = {
     index: '🏠',
     assets: '💰',
@@ -16,7 +17,10 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 
   return (
     <View style={styles.iconContainer}>
-      <Text style={[styles.icon, focused && styles.iconFocused]}>
+      <Text style={[
+        styles.icon,
+        { color: focused ? colors.accent : colors.textMuted },
+      ]}>
         {icons[name] || '•'}
       </Text>
     </View>
@@ -24,11 +28,11 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 }
 
 function RootLayoutInner() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar style={colors.background === '#0f0f1a' ? 'light' : 'dark'} />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Tabs
         screenOptions={{
           headerStyle: { backgroundColor: colors.tabBar },
@@ -38,11 +42,11 @@ function RootLayoutInner() {
           tabBarInactiveTintColor: colors.textMuted,
         }}
       >
-        <Tabs.Screen name="index" options={{ title: '首页', tabBarIcon: ({ focused }) => <TabIcon name="index" focused={focused} /> }} />
-        <Tabs.Screen name="assets" options={{ title: '资产', tabBarIcon: ({ focused }) => <TabIcon name="assets" focused={focused} /> }} />
-        <Tabs.Screen name="investments" options={{ title: '投资', tabBarIcon: ({ focused }) => <TabIcon name="investments" focused={focused} /> }} />
-        <Tabs.Screen name="import" options={{ title: '导入', tabBarIcon: ({ focused }) => <TabIcon name="import" focused={focused} /> }} />
-        <Tabs.Screen name="settings" options={{ title: '设置', tabBarIcon: ({ focused }) => <TabIcon name="settings" focused={focused} /> }} />
+        <Tabs.Screen name="index" options={{ title: '首页', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="index" focused={focused} /> }} />
+        <Tabs.Screen name="assets" options={{ title: '资产', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="assets" focused={focused} /> }} />
+        <Tabs.Screen name="investments" options={{ title: '投资', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="investments" focused={focused} /> }} />
+        <Tabs.Screen name="import" options={{ title: '导入', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="import" focused={focused} /> }} />
+        <Tabs.Screen name="settings" options={{ title: '设置', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="settings" focused={focused} /> }} />
       </Tabs>
     </View>
   );
@@ -59,6 +63,5 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   iconContainer: { alignItems: 'center', justifyContent: 'center' },
-  icon: { fontSize: 20, opacity: 0.6 },
-  iconFocused: { opacity: 1 },
+  icon: { fontSize: 20 },
 });

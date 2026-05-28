@@ -1,12 +1,13 @@
 // 截图解析导入页面
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Image } from 'react-native';
 import { Card, Button, TextInput } from 'react-native-paper';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../src/context/ThemeContext';
+
 import { parseScreenshot, ParsedReceipt } from '../src/services/parser/ocr';
 
 export default function ImportScreen() {
@@ -98,24 +99,18 @@ export default function ImportScreen() {
     ? [{ value: 'gold', label: '黄金' }, { value: 'yuebao', label: '余额宝' }, { value: 'fund', label: '基金' }, { value: 'cn-stock', label: 'A股' }, { value: 'hk-stock', label: '港股' }]
     : [{ value: 'cash', label: '现金' }, { value: 'bank', label: '银行存款' }, { value: 'alipay', label: '支付宝' }, { value: 'wechat', label: '微信' }];
 
-  const btnStyle = (isActive: boolean) => ({
-    style: styles.typeBtn,
-    buttonColor: isActive ? colors.accent : 'transparent',
-    textColor: isActive ? colors.accentText : colors.textSecondary,
-  });
-
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>📷 选择截图</Text>
           <View style={styles.imageRow}>
-            <Button {...btnStyle(false)} onPress={pickImage}>📁 从相册选择</Button>
-            <Button {...btnStyle(false)} onPress={takePhoto}>📷 拍照</Button>
+            <Button mode="outlined" onPress={pickImage} textColor={colors.accent} style={styles.imgBtn} buttonColor="transparent">📁 从相册选择</Button>
+            <Button mode="outlined" onPress={takePhoto} textColor={colors.accent} style={styles.imgBtn} buttonColor="transparent">📷 拍照</Button>
           </View>
 
           {imageUri && (
-            <View style={[styles.previewBox, { backgroundColor: colors.background }]}>
+            <View style={[styles.previewBox, { backgroundColor: colors.backgroundSecondary }]}>
               <Image source={{ uri: imageUri }} style={styles.preview} resizeMode="contain" />
             </View>
           )}
@@ -125,7 +120,7 @@ export default function ImportScreen() {
             onPress={handleParse}
             loading={parsing}
             disabled={!imageUri || parsing}
-            style={styles.parseBtn}
+            style={[styles.parseBtn, { backgroundColor: colors.accent }]}
             buttonColor={colors.accent}
             textColor={colors.accentText}
           >
@@ -157,26 +152,73 @@ export default function ImportScreen() {
 
           <Text style={[styles.label, { color: colors.textSecondary }]}>资产类型</Text>
           <View style={styles.typeRow}>
-            <Button mode={type === 'investment' ? 'contained' : 'outlined'} onPress={() => { setType('investment'); setSubtype('gold'); }} style={styles.typeBtn} buttonColor={type === 'investment' ? colors.accent : 'transparent'} textColor={type === 'investment' ? colors.accentText : colors.textSecondary}>💰 投资</Button>
-            <Button mode={type === 'cash' ? 'contained' : 'outlined'} onPress={() => { setType('cash'); setSubtype('bank'); }} style={styles.typeBtn} buttonColor={type === 'cash' ? colors.accent : 'transparent'} textColor={type === 'cash' ? colors.accentText : colors.textSecondary}>💵 流动资金</Button>
+            <Button
+              mode={type === 'investment' ? 'contained' : 'outlined'}
+              onPress={() => { setType('investment'); setSubtype('gold'); }}
+              style={styles.typeBtn}
+              buttonColor={type === 'investment' ? colors.accent : 'transparent'}
+              textColor={type === 'investment' ? colors.accentText : colors.textMuted}
+            >💰 投资</Button>
+            <Button
+              mode={type === 'cash' ? 'contained' : 'outlined'}
+              onPress={() => { setType('cash'); setSubtype('bank'); }}
+              style={styles.typeBtn}
+              buttonColor={type === 'cash' ? colors.accent : 'transparent'}
+              textColor={type === 'cash' ? colors.accentText : colors.textMuted}
+            >💵 流动资金</Button>
           </View>
 
           <Text style={[styles.label, { color: colors.textSecondary }]}>子类型</Text>
           <View style={styles.subtypeGrid}>
             {subtypes.map(s => (
-              <Button key={s.value} mode={subtype === s.value ? 'contained' : 'outlined'} onPress={() => setSubtype(s.value)} style={styles.subBtn} buttonColor={subtype === s.value ? '#00d9ff' : 'transparent'} textColor={subtype === s.value ? '#1a1a2e' : colors.textSecondary} compact>{s.label}</Button>
+              <Button
+                key={s.value}
+                mode={subtype === s.value ? 'contained' : 'outlined'}
+                onPress={() => setSubtype(s.value)}
+                style={styles.subBtn}
+                buttonColor={subtype === s.value ? colors.accent : 'transparent'}
+                textColor={subtype === s.value ? colors.accentText : colors.textMuted}
+                compact
+              >{s.label}</Button>
             ))}
           </View>
 
           <Text style={[styles.label, { color: colors.textSecondary }]}>名称</Text>
-          <TextInput value={name} onChangeText={setName} placeholder="例如：纸黄金账户" placeholderTextColor={colors.textMuted} style={[styles.input, { backgroundColor: colors.card }]} mode="outlined" outlineColor={colors.border} activeOutlineColor={colors.accent} textColor={colors.text} />
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="例如：纸黄金账户"
+            placeholderTextColor={colors.textMuted}
+            style={[styles.input, { backgroundColor: colors.cardSecondary }]}
+            mode="outlined"
+            outlineColor={colors.border}
+            activeOutlineColor={colors.accent}
+            textColor={colors.text}
+          />
 
           <Text style={[styles.label, { color: colors.textSecondary }]}>金额 (CNY)</Text>
-          <TextInput value={amount} onChangeText={setAmount} placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" style={[styles.input, { backgroundColor: colors.card }]} mode="outlined" outlineColor={colors.border} activeOutlineColor={colors.accent} textColor={colors.text} />
+          <TextInput
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="0.00"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="decimal-pad"
+            style={[styles.input, { backgroundColor: colors.cardSecondary }]}
+            mode="outlined"
+            outlineColor={colors.border}
+            activeOutlineColor={colors.accent}
+            textColor={colors.text}
+          />
         </Card.Content>
       </Card>
 
-      <Button mode="contained" onPress={handleSave} style={styles.saveBtn} buttonColor={colors.gain} textColor={colors.accentText}>💾 保存到资产</Button>
+      <Button
+        mode="contained"
+        onPress={handleSave}
+        style={[styles.saveBtn, { backgroundColor: colors.gain }]}
+        buttonColor={colors.gain}
+        textColor="#fff"
+      >💾 保存到资产</Button>
     </ScrollView>
   );
 }

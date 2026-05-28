@@ -6,7 +6,10 @@ import { Card } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../src/context/ThemeContext';
+
 import { recalculateAllInvestments } from '../src/services/profitCalculator';
+
+const UPDATE_KEY = '@assets_tracker/profit_updates';
 
 export default function InvestmentsScreen() {
   const { colors } = useTheme();
@@ -73,25 +76,40 @@ export default function InvestmentsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.summaryRow, { backgroundColor: colors.card }]}>
-        <View style={styles.summaryItem}><Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>总市值</Text><Text style={[styles.summaryValue, { color: colors.text }]}>{formatCurrency(totalValue)}</Text></View>
-        <View style={styles.summaryItem}><Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>今日盈亏</Text><Text style={[styles.summaryValue, totalDailyPnl >= 0 ? { color: colors.gain } : { color: colors.loss }]}>{formatCurrency(totalDailyPnl)}</Text></View>
+      <View style={[styles.summaryRow, { backgroundColor: colors.tabBar }]}>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>总市值</Text>
+          <Text style={[styles.summaryValue, { color: colors.text }]}>{formatCurrency(totalValue)}</Text>
+        </View>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>今日盈亏</Text>
+          <Text style={[styles.summaryValue, { color: totalDailyPnl >= 0 ? colors.gain : colors.loss }]}>{formatCurrency(totalDailyPnl)}</Text>
+        </View>
       </View>
 
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
         {investments.length === 0 ? (
-          <View style={styles.emptyState}><Text style={[styles.emptyTitle, { color: colors.text }]}>暂无投资</Text><Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>点击下方按钮添加理财产品</Text></View>
+          <View style={styles.emptyState}>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>暂无投资</Text>
+            <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>点击下方按钮添加理财产品</Text>
+          </View>
         ) : investments.map((inv: any) => (
           <TouchableOpacity key={inv.id} onLongPress={() => handleDelete(inv.id)}>
-            <Card style={[styles.invCard, { backgroundColor: colors.cardSecondary }]}>
+            <Card style={[styles.invCard, { backgroundColor: colors.card }]}>
               <Card.Content>
                 <View style={styles.invHeader}>
                   <Text style={[styles.invName, { color: colors.text }]}>{inv.name}</Text>
-                  <Text style={[styles.invSubtype, { color: colors.textMuted, backgroundColor: colors.card }]}>{getSubtypeLabel(inv)}</Text>
+                  <Text style={[styles.invSubtype, { color: colors.textMuted, backgroundColor: colors.cardSecondary }]}>{getSubtypeLabel(inv)}</Text>
                 </View>
                 <View style={styles.invRow}>
-                  <View><Text style={[styles.invLabel, { color: colors.textSecondary }]}>当前市值</Text><Text style={[styles.invAmount, { color: colors.text }]}>{formatCurrency(inv.amount)}</Text></View>
-                  <View><Text style={[styles.invLabel, { color: colors.textSecondary }]}>今日盈亏</Text><Text style={[styles.invPnl, inv.dailyPnl >= 0 ? { color: colors.gain } : { color: colors.loss }]}>{formatCurrency(inv.dailyPnl)} ({formatPercent(inv.dailyReturn)})</Text></View>
+                  <View>
+                    <Text style={[styles.invLabel, { color: colors.textSecondary }]}>当前市值</Text>
+                    <Text style={[styles.invAmount, { color: colors.text }]}>{formatCurrency(inv.amount)}</Text>
+                  </View>
+                  <View>
+                    <Text style={[styles.invLabel, { color: colors.textSecondary }]}>今日盈亏</Text>
+                    <Text style={[styles.invPnl, { color: inv.dailyPnl >= 0 ? colors.gain : colors.loss }]}>{formatCurrency(inv.dailyPnl)} ({formatPercent(inv.dailyReturn)})</Text>
+                  </View>
                 </View>
               </Card.Content>
             </Card>

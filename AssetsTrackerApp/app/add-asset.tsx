@@ -43,22 +43,71 @@ export default function AddAssetScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
           <Text style={[styles.label, { color: colors.textSecondary }]}>资产类型</Text>
-          <SegmentedButtons value={type} onValueChange={(val) => { setType(val as 'cash' | 'fixed'); setSubtype(val === 'cash' ? 'bank' : 'property'); }} buttons={[{ value: 'cash', label: '流动资金' }, { value: 'fixed', label: '固定资产' }]} style={styles.segmented} />
+          <SegmentedButtons
+            value={type}
+            onValueChange={(val) => { setType(val as 'cash' | 'fixed'); setSubtype(val === 'cash' ? 'bank' : 'property'); }}
+            buttons={[{ value: 'cash', label: '流动资金' }, { value: 'fixed', label: '固定资产' }]}
+            style={styles.segmented}
+          />
           <Text style={[styles.label, { color: colors.textSecondary }]}>子类型</Text>
-          <SegmentedButtons value={subtype} onValueChange={setSubtype} buttons={subtypes.map(s => ({ value: s.value, label: s.label }))} style={styles.segmented} />
+          <SegmentedButtons
+            value={subtype}
+            onValueChange={setSubtype}
+            buttons={subtypes.map(s => ({ value: s.value, label: s.label }))}
+            style={styles.segmented}
+          />
           <Text style={[styles.label, { color: colors.textSecondary }]}>资产名称</Text>
-          <TextInput value={name} onChangeText={setName} placeholder="例如：招商银行储蓄卡" placeholderTextColor={colors.textMuted} style={[styles.input, { backgroundColor: colors.card }]} mode="outlined" outlineColor={colors.border} activeOutlineColor={colors.accent} textColor={colors.text} />
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="例如：招商银行储蓄卡"
+            placeholderTextColor={colors.textMuted}
+            style={[styles.input, { backgroundColor: colors.cardSecondary }]}
+            mode="outlined"
+            outlineColor={colors.border}
+            activeOutlineColor={colors.accent}
+            textColor={colors.text}
+          />
           <Text style={[styles.label, { color: colors.textSecondary }]}>备注 (可选)</Text>
-          <TextInput value={note} onChangeText={setNote} placeholder="添加备注信息" placeholderTextColor={colors.textMuted} style={[styles.input, styles.noteInput, { backgroundColor: colors.card }]} mode="outlined" outlineColor={colors.border} activeOutlineColor={colors.accent} textColor={colors.text} multiline numberOfLines={2} />
+          <TextInput
+            value={note}
+            onChangeText={setNote}
+            placeholder="添加备注信息"
+            placeholderTextColor={colors.textMuted}
+            style={[styles.input, { minHeight: 60 }]}
+            mode="outlined"
+            outlineColor={colors.border}
+            activeOutlineColor={colors.accent}
+            textColor={colors.text}
+            multiline
+            numberOfLines={2}
+          />
           <Text style={[styles.label, { color: colors.textSecondary }]}>金额 (CNY)</Text>
-          <TextInput value={amount} onChangeText={setAmount} placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" style={[styles.input, { backgroundColor: colors.card }]} mode="outlined" outlineColor={colors.border} activeOutlineColor={colors.accent} textColor={colors.text} />
+          <TextInput
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="0.00"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="decimal-pad"
+            style={[styles.input, { backgroundColor: colors.cardSecondary }]}
+            mode="outlined"
+            outlineColor={colors.border}
+            activeOutlineColor={colors.accent}
+            textColor={colors.text}
+          />
         </Card.Content>
       </Card>
-      <Button mode="contained" onPress={handleSave} style={styles.saveBtn} buttonColor={colors.accent} textColor={colors.accentText}>保存</Button>
+      <Button
+        mode="contained"
+        onPress={handleSave}
+        style={[styles.saveBtn, { backgroundColor: colors.accent }]}
+        buttonColor={colors.accent}
+        textColor={colors.accentText}
+      >保存</Button>
     </ScrollView>
   );
 }
@@ -70,6 +119,5 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, marginTop: 16, marginBottom: 8 },
   segmented: { marginBottom: 8 },
   input: { marginBottom: 8 },
-  noteInput: { minHeight: 60 },
   saveBtn: { marginTop: 16 },
 });

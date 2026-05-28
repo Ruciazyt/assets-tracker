@@ -22,7 +22,18 @@ export default function AddInvestmentScreen() {
     if (!amount || parseFloat(amount) <= 0) { Alert.alert('错误', '请输入当前市值'); return; }
     if (!cost || parseFloat(cost) <= 0) { Alert.alert('错误', '请输入总成本'); return; }
 
-    const investment = { id: Date.now().toString(), subtype, name: name.trim(), code: code.trim() || undefined, amount: parseFloat(amount), cost: parseFloat(cost), lastPrice: parseFloat(amount) / parseFloat(cost), dailyPnl: 0, totalPnl: parseFloat(amount) - parseFloat(cost), dailyReturn: 0 };
+    const investment = {
+      id: Date.now().toString(),
+      subtype,
+      name: name.trim(),
+      code: code.trim() || undefined,
+      amount: parseFloat(amount),
+      cost: parseFloat(cost),
+      lastPrice: parseFloat(amount) / parseFloat(cost),
+      dailyPnl: 0,
+      totalPnl: parseFloat(amount) - parseFloat(cost),
+      dailyReturn: 0,
+    };
     const existing = await AsyncStorage.getItem('@assets_tracker/investments');
     const investments = existing ? JSON.parse(existing) : [];
     investments.push(investment);
@@ -31,30 +42,86 @@ export default function AddInvestmentScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.backgroundSecondary }]} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
           <Text style={[styles.label, { color: colors.textSecondary }]}>产品类型</Text>
           <View style={styles.subtypeGrid}>
             {subtypes.map(s => (
-              <Button key={s.value} mode={subtype === s.value ? 'contained' : 'outlined'} onPress={() => setSubtype(s.value)} style={styles.subtypeBtn} buttonColor={subtype === s.value ? colors.accent : 'transparent'} textColor={subtype === s.value ? colors.accentText : colors.textSecondary} compact>{s.label}</Button>
+              <Button
+                key={s.value}
+                mode={subtype === s.value ? 'contained' : 'outlined'}
+                onPress={() => setSubtype(s.value)}
+                style={styles.subtypeBtn}
+                buttonColor={subtype === s.value ? colors.accent : 'transparent'}
+                textColor={subtype === s.value ? colors.accentText : colors.textMuted}
+                compact
+              >{s.label}</Button>
             ))}
           </View>
           <Text style={[styles.label, { color: colors.textSecondary }]}>产品名称</Text>
-          <TextInput value={name} onChangeText={setName} placeholder="例如：Au99.99纸黄金" placeholderTextColor={colors.textMuted} style={[styles.input, { backgroundColor: colors.card }]} mode="outlined" outlineColor={colors.border} activeOutlineColor={colors.accent} textColor={colors.text} />
+          <TextInput
+            value={name}
+            onChangeText={setName}
+            placeholder="例如：Au99.99纸黄金"
+            placeholderTextColor={colors.textMuted}
+            style={[styles.input, { backgroundColor: colors.cardSecondary }]}
+            mode="outlined"
+            outlineColor={colors.border}
+            activeOutlineColor={colors.accent}
+            textColor={colors.text}
+          />
           {(subtype === 'fund' || subtype === 'cn-stock' || subtype === 'hk-stock') && (
             <>
               <Text style={[styles.label, { color: colors.textSecondary }]}>产品代码 (可选)</Text>
-              <TextInput value={code} onChangeText={setCode} placeholder="例如：510300 或 600539" placeholderTextColor={colors.textMuted} style={[styles.input, { backgroundColor: colors.card }]} mode="outlined" outlineColor={colors.border} activeOutlineColor={colors.accent} textColor={colors.text} />
+              <TextInput
+                value={code}
+                onChangeText={setCode}
+                placeholder="例如：510300 或 600539"
+                placeholderTextColor={colors.textMuted}
+                style={[styles.input, { backgroundColor: colors.cardSecondary }]}
+                mode="outlined"
+                outlineColor={colors.border}
+                activeOutlineColor={colors.accent}
+                textColor={colors.text}
+              />
             </>
           )}
           <Text style={[styles.label, { color: colors.textSecondary }]}>当前市值 (CNY)</Text>
-          <TextInput value={amount} onChangeText={setAmount} placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" style={[styles.input, { backgroundColor: colors.card }]} mode="outlined" outlineColor={colors.border} activeOutlineColor={colors.accent} textColor={colors.text} />
+          <TextInput
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="0.00"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="decimal-pad"
+            style={[styles.input, { backgroundColor: colors.cardSecondary }]}
+            mode="outlined"
+            outlineColor={colors.border}
+            activeOutlineColor={colors.accent}
+            textColor={colors.text}
+          />
           <Text style={[styles.label, { color: colors.textSecondary }]}>总成本 (CNY)</Text>
-          <TextInput value={cost} onChangeText={setCost} placeholder="买入时的总成本" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" style={[styles.input, { backgroundColor: colors.card }]} mode="outlined" outlineColor={colors.border} activeOutlineColor={colors.accent} textColor={colors.text} />
+          <TextInput
+            value={cost}
+            onChangeText={setCost}
+            placeholder="买入时的总成本"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="decimal-pad"
+            style={[styles.input, { backgroundColor: colors.cardSecondary }]}
+            mode="outlined"
+            outlineColor={colors.border}
+            activeOutlineColor={colors.accent}
+            textColor={colors.text}
+          />
         </Card.Content>
       </Card>
-      <Button mode="contained" onPress={handleSave} style={styles.saveBtn} buttonColor={colors.accent} textColor={colors.accentText}>保存</Button>
+      <Button
+        mode="contained"
+        onPress={handleSave}
+        style={[styles.saveBtn, { backgroundColor: colors.accent }]}
+        buttonColor={colors.accent}
+        textColor={colors.accentText}
+      >保存</Button>
     </ScrollView>
   );
 }
