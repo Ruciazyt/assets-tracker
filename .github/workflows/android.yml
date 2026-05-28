@@ -51,7 +51,7 @@ jobs:
           rm -rf android
           npx expo prebuild --platform android --clean
 
-      - name: Patch settings.gradle - add expo-modules-core + expo-module-gradle-plugin includeBuild
+      - name: Patch settings.gradle - inject includeBuild for expo-modules-core & expo-module-gradle-plugin
         run: |
           cd AssetsTrackerApp/android
           python3 << 'PYEOF'
@@ -72,7 +72,7 @@ if insert_after is not None:
         insert_after += 1
 with open('settings.gradle', 'w') as f:
     f.writelines(lines)
-print('Patched settings.gradle')
+print('Patched settings.gradle OK')
 PYEOF
 
       - name: Build APK
@@ -81,7 +81,7 @@ PYEOF
         run: |
           cd AssetsTrackerApp/android
           rm -rf ~/.gradle/caches/build-cache-*
-          ./gradlew :app:assembleRelease --no-build-cache -Dorg.gradle.jvmargs="-Xmx1024m" --no-daemon -x test 2>&1 | tee /tmp/gradle.log
+          ./gradlew :app:assembleRelease --no-build-cache -Dorg.gradle.jvmargs="-Xmx1536m" --no-daemon -x test 2>&1 | tee /tmp/gradle.log
           if [ ${PIPESTATUS[0]} -ne 0 ]; then
             echo "=== GRADLE FAILURE ==="
             tail -50 /tmp/gradle.log
