@@ -5,8 +5,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { Card, SegmentedButtons } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../src/context/ThemeContext';
 
 export default function AssetsScreen() {
+  const { colors } = useTheme();
   const router = useRouter();
   const [assets, setAssets] = useState<any[]>([]);
   const [filter, setFilter] = useState('all');
@@ -43,53 +45,60 @@ export default function AssetsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.filterRow}>
-        <SegmentedButtons value={filter} onValueChange={setFilter} buttons={[
-          { value: 'all', label: `全部` },
-          { value: 'cash', label: `流动资金` },
-          { value: 'fixed', label: `固定资产` },
-        ]} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.filterRow, { backgroundColor: colors.tabBar }]}>
+        <SegmentedButtons
+          value={filter}
+          onValueChange={setFilter}
+          buttons={[
+            { value: 'all', label: `全部` },
+            { value: 'cash', label: `流动资金` },
+            { value: 'fixed', label: `固定资产` },
+          ]}
+        />
       </View>
 
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
         {filteredAssets.length === 0 ? (
-          <View style={styles.emptyState}><Text style={styles.emptyTitle}>暂无资产</Text><Text style={styles.emptyDesc}>点击下方按钮添加资产</Text></View>
+          <View style={styles.emptyState}>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>暂无资产</Text>
+            <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>点击下方按钮添加资产</Text>
+          </View>
         ) : filteredAssets.map((asset: any) => (
           <TouchableOpacity key={asset.id} onLongPress={() => handleDelete(asset.id)}>
-            <Card style={styles.assetCard}>
+            <Card style={[styles.assetCard, { backgroundColor: colors.card }]}>
               <Card.Content>
                 <View style={styles.assetHeader}>
-                  <Text style={styles.assetName}>{asset.name}</Text>
-                  <Text style={styles.assetSubtype}>{getSubtypeLabel(asset)}</Text>
+                  <Text style={[styles.assetName, { color: colors.text }]}>{asset.name}</Text>
+                  <Text style={[styles.assetSubtype, { color: colors.textMuted }]}>{getSubtypeLabel(asset)}</Text>
                 </View>
-                <Text style={styles.assetAmount}>{formatCurrency(asset.amount)}</Text>
+                <Text style={[styles.assetAmount, { color: colors.text }]}>{formatCurrency(asset.amount)}</Text>
               </Card.Content>
             </Card>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      <TouchableOpacity style={styles.addButton} onPress={() => router.push('/add-asset')}>
-        <Text style={styles.addButtonText}>+ 添加资产</Text>
+      <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/add-asset')}>
+        <Text style={[styles.addButtonText, { color: colors.accentText }]}>+ 添加资产</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
-  filterRow: { padding: 16, backgroundColor: '#1a1a2e' },
+  container: { flex: 1 },
+  filterRow: { padding: 16 },
   list: { flex: 1 },
   listContent: { padding: 16 },
   emptyState: { alignItems: 'center', paddingVertical: 64 },
-  emptyTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 8 },
-  emptyDesc: { color: '#a0a0b0', fontSize: 14 },
-  assetCard: { backgroundColor: '#252540', borderRadius: 12, marginBottom: 8 },
+  emptyTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  emptyDesc: { fontSize: 14 },
+  assetCard: { borderRadius: 12, marginBottom: 8 },
   assetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  assetName: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  assetSubtype: { color: '#6b6b7b', fontSize: 12 },
-  assetAmount: { color: '#fff', fontSize: 20, fontWeight: '700', marginTop: 4 },
-  addButton: { position: 'absolute', bottom: 24, right: 24, backgroundColor: '#6366f1', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 },
-  addButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  assetName: { fontSize: 16, fontWeight: '600' },
+  assetSubtype: { fontSize: 12 },
+  assetAmount: { fontSize: 20, fontWeight: '700', marginTop: 4 },
+  addButton: { position: 'absolute', bottom: 24, right: 24, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 },
+  addButtonText: { fontSize: 16, fontWeight: '600' },
 });

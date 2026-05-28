@@ -1,8 +1,9 @@
-// 根布局 - 深色主题配置
+// 根布局 - 主题配置 + 深色/亮色切换
 
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet } from 'react-native';
+import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   const icons: Record<string, string> = {
@@ -22,17 +23,19 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   );
 }
 
-export default function RootLayout() {
+function RootLayoutInner() {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={colors.background === '#0f0f1a' ? 'light' : 'dark'} />
       <Tabs
         screenOptions={{
-          headerStyle: { backgroundColor: '#1a1a2e' },
-          headerTintColor: '#fff',
-          tabBarStyle: { backgroundColor: '#1a1a2e', borderTopColor: '#2a2a3e', height: 60, paddingBottom: 8 },
-          tabBarActiveTintColor: '#6366f1',
-          tabBarInactiveTintColor: '#6b6b7b',
+          headerStyle: { backgroundColor: colors.tabBar },
+          headerTintColor: colors.text,
+          tabBarStyle: { backgroundColor: colors.tabBar, borderTopColor: colors.tabBarBorder, height: 60, paddingBottom: 8 },
+          tabBarActiveTintColor: colors.accent,
+          tabBarInactiveTintColor: colors.textMuted,
         }}
       >
         <Tabs.Screen name="index" options={{ title: '首页', tabBarIcon: ({ focused }) => <TabIcon name="index" focused={focused} /> }} />
@@ -45,8 +48,16 @@ export default function RootLayout() {
   );
 }
 
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutInner />
+    </ThemeProvider>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f1a' },
+  container: { flex: 1 },
   iconContainer: { alignItems: 'center', justifyContent: 'center' },
   icon: { fontSize: 20, opacity: 0.6 },
   iconFocused: { opacity: 1 },
