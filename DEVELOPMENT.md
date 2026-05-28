@@ -51,6 +51,7 @@
 | 2026-05-28 (傍晚) | 收益计算功能完成（实时价格+每日/累计盈亏）； investments.tsx 集成刷新 |
 | 2026-05-28 (晚) | 截图导入页面 import.tsx 完成；Tab导航新增"📷 导入"；parseTextSearch 文字搜索识别 |
 | 2026-05-28 (深夜) | Phase 5 暗色/亮色主题切换完成（ThemeContext + Settings 主题开关） |
+| 2026-05-29 | 自动刷新间隔设置完成（useAutoRefresh hook + settings UI）；可配置：关闭/15秒/30秒/60秒/5分钟 |
 
 ---
 
