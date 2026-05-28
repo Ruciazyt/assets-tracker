@@ -54,9 +54,26 @@ jobs:
       - name: Patch settings.gradle - add expo-modules-core + expo-module-gradle-plugin includeBuild
         run: |
           cd AssetsTrackerApp/android
-          # After expo prebuild, inject includeBuild for both expo-modules-core and expo-module-gradle-plugin
-          # These are required so that expo ecosystem modules (expo-keep-awake, etc.) can resolve their gradle plugin
-          sed -i '/^includeBuild(.*react-native\/gradle-plugin.*)$/a\    includeBuild(new File(["node", "--print", "require.resolve('\''expo-modules-core\/package.json'\'', { paths: [require.resolve('\''expo\/package.json'\'') ] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "\/android"))\n    includeBuild(new File(["node", "--print", "require.resolve('\''expo-module-gradle-plugin\/package.json'\'', { paths: [require.resolve('\''expo\/package.json'\'') ] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath()))' settings.gradle
+          python3 << 'PYEOF'
+with open('settings.gradle', 'r') as f:
+    lines = f.readlines()
+insert_after = None
+for i, line in enumerate(lines):
+    if 'react-native/gradle-plugin' in line and 'includeBuild' in line:
+        insert_after = i
+        break
+if insert_after is not None:
+    new_lines = [
+        '    includeBuild(new File(["node", "--print", "require.resolve(\'expo-modules-core/package.json\', { paths: [require.resolve(\'expo/package.json\')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "/android").getParentFile().toString())\n',
+        '    includeBuild(new File(["node", "--print", "require.resolve(\'expo-module-gradle-plugin/package.json\', { paths: [require.resolve(\'expo/package.json\')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath()))\n',
+    ]
+    for nl in new_lines:
+        lines.insert(insert_after + 1, nl)
+        insert_after += 1
+with open('settings.gradle', 'w') as f:
+    f.writelines(lines)
+print('Patched settings.gradle')
+PYEOF
 
       - name: Build APK
         env:
