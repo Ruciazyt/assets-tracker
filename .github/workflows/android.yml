@@ -51,12 +51,12 @@ jobs:
           rm -rf android
           npx expo prebuild --platform android --clean
 
-      - name: Patch settings.gradle for expo-module-gradle-plugin
+      - name: Patch settings.gradle - add expo-modules-core + expo-module-gradle-plugin includeBuild
         run: |
           cd AssetsTrackerApp/android
-          # After prebuild, inject includeBuild for expo-module-gradle-plugin
-          # This plugin is required by expo ecosystem modules but not declared in pluginManagement
-          sed -i '/^includeBuild(.*react-native\/gradle-plugin.*)$/a\    includeBuild(new File(["node", "--print", "require.resolve('\''expo-module-gradle-plugin\/package.json'\'', { paths: [require.resolve('\''expo\/package.json'\'') ] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath()))' settings.gradle
+          # After expo prebuild, inject includeBuild for both expo-modules-core and expo-module-gradle-plugin
+          # These are required so that expo ecosystem modules (expo-keep-awake, etc.) can resolve their gradle plugin
+          sed -i '/^includeBuild(.*react-native\/gradle-plugin.*)$/a\    includeBuild(new File(["node", "--print", "require.resolve('\''expo-modules-core\/package.json'\'', { paths: [require.resolve('\''expo\/package.json'\'') ] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "\/android"))\n    includeBuild(new File(["node", "--print", "require.resolve('\''expo-module-gradle-plugin\/package.json'\'', { paths: [require.resolve('\''expo\/package.json'\'') ] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath()))' settings.gradle
 
       - name: Build APK
         env:
