@@ -9,6 +9,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
     index: '🏠',
     assets: '💰',
     investments: '📈',
+    import: '📷',
     settings: '⚙️',
   };
 
@@ -37,6 +38,7 @@ export default function RootLayout() {
         <Tabs.Screen name="index" options={{ title: '首页', tabBarIcon: ({ focused }) => <TabIcon name="index" focused={focused} /> }} />
         <Tabs.Screen name="assets" options={{ title: '资产', tabBarIcon: ({ focused }) => <TabIcon name="assets" focused={focused} /> }} />
         <Tabs.Screen name="investments" options={{ title: '投资', tabBarIcon: ({ focused }) => <TabIcon name="investments" focused={focused} /> }} />
+        <Tabs.Screen name="import" options={{ title: '导入', tabBarIcon: ({ focused }) => <TabIcon name="import" focused={focused} /> }} />
         <Tabs.Screen name="settings" options={{ title: '设置', tabBarIcon: ({ focused }) => <TabIcon name="settings" focused={focused} /> }} />
       </Tabs>
     </View>
