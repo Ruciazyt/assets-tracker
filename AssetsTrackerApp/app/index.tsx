@@ -5,6 +5,9 @@ import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native
 import { Card } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../src/context/ThemeContext';
+import { getGoldPrice } from '../src/services/market/gold';
+import { getJPYRate } from '../src/services/market/fx';
+import { saveDailySnapshot } from '../src/services/historyService';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
@@ -25,8 +28,28 @@ export default function HomeScreen() {
       const totalInvestments = investments.reduce((sum: number, i: any) => sum + i.amount, 0);
       const dailyPnl = investments.reduce((sum: number, i: any) => sum + (i.dailyPnl || 0), 0);
       const totalPnl = investments.reduce((sum: number, i: any) => sum + (i.totalPnl || 0), 0);
-      setSummary({ totalAssets, totalInvestments, totalValue: totalAssets + totalInvestments, dailyPnl, totalPnl });
-    } catch (e) {}
+      const totalValue = totalAssets + totalInvestments;
+      setSummary({ totalAssets, totalInvestments, totalValue, dailyPnl, totalPnl });
+
+      // Fetch market data in parallel (graceful failure)
+      const [gold, jpy] = await Promise.allSettled([
+        getGoldPrice(),
+        getJPYRate(),
+      ]);
+      if (gold.status === 'fulfilled' && gold.value) setGoldPrice(gold.value);
+      if (jpy.status === 'fulfilled' && jpy.value) setJpyRate(jpy.value);
+
+      // Save daily snapshot for trend tracking
+      await saveDailySnapshot({
+        goldPrice: gold.status === 'fulfilled' ? gold.value?.price : undefined,
+        jpyRate: jpy.status === 'fulfilled' ? jpy.value?.rate : undefined,
+        totalValue,
+        totalDailyPnl: dailyPnl,
+        totalPnl,
+      });
+    } catch (e) {
+      console.error('Home fetchData error:', e);
+    }
   }, []);
 
   useEffect(() => {
