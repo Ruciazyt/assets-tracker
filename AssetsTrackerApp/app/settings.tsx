@@ -1,11 +1,12 @@
 // 设置页面
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch, TextInput, Modal } from 'react-native';
 import { Card } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../src/context/ThemeContext';
+import { useAuth } from '../src/hooks/useAuth';
 
 const currencies = ['CNY', 'USD', 'HKD', 'JPY', 'EUR', 'GBP'];
 
@@ -19,9 +20,15 @@ const refreshOptions = [
 
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
+  const { pinEnabled, verifyPin, setupPin, clearPin } = useAuth();
   const [defaultCurrency, setDefaultCurrency] = useState('CNY');
   const [refreshInterval, setRefreshInterval] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
+  const [pinMode, setPinMode] = useState<'setup' | 'disable'>('setup');
+  const [pinError, setPinError] = useState('');
 
   useEffect(() => { loadSettings(); }, []);
 
@@ -184,12 +191,127 @@ export default function SettingsScreen() {
 
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>PIN 保护</Text>
+          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>设置应用锁定 PIN</Text>
+          <View style={[styles.themeRow, { backgroundColor: colors.cardSecondary, borderColor: colors.border }]}>
+            <View>
+              <Text style={[styles.themeLabel, { color: colors.text }]}>PIN 保护</Text>
+              <Text style={[styles.themeDesc, { color: colors.textSecondary }]}>
+                {pinEnabled ? '已开启' : '已关闭'}
+              </Text>
+            </View>
+            <Switch
+              value={pinEnabled}
+              onValueChange={(val) => {
+                if (val) {
+                  setPinMode('setup');
+                  setPinInput('');
+                  setPinConfirm('');
+                  setPinError('');
+                  setShowPinSetup(true);
+                } else {
+                  setPinMode('disable');
+                  setPinInput('');
+                  setPinError('');
+                  setShowPinSetup(true);
+                }
+              }}
+              trackColor={{ false: '#6366f1', true: '#6366f1' }}
+              thumbColor={pinEnabled ? '#fff' : '#ccc'}
+            />
+          </View>
+        </Card.Content>
+      </Card>
+
+      <Card style={[styles.card, { backgroundColor: colors.card }]}>
+        <Card.Content>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>关于</Text>
           <Text style={[styles.aboutTitle, { color: colors.text }]}>Assets Tracker</Text>
           <Text style={[styles.aboutVersion, { color: colors.textSecondary }]}>版本 1.0.0</Text>
           <Text style={[styles.aboutDesc, { color: colors.textMuted }]}>资产追踪器 - 帮助您管理流动资金、固定资产和理财产品</Text>
         </Card.Content>
       </Card>
+      {/* PIN Setup / Disable Modal */}
+      <Modal visible={showPinSetup} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              {pinMode === 'setup' ? '设置 PIN' : '验证 PIN'}
+            </Text>
+            {pinMode === 'setup' && pinInput.length === 4 && (
+              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>请再次输入以确认</Text>
+            )}
+            {pinError ? <Text style={[styles.pinError, { color: colors.loss }]}>{pinError}</Text> : null}
+            <TextInput
+              style={[styles.pinInput, { color: colors.text, backgroundColor: colors.cardSecondary, borderColor: colors.border }]}
+              value={pinMode === 'disable' ? pinInput : (pinInput.length === 4 ? pinConfirm : pinInput)}
+              onChangeText={(text) => {
+                const digits = text.replace(/\D/g, '').slice(0, 4);
+                setPinError('');
+                if (pinMode === 'disable') {
+                  setPinInput(digits);
+                  if (digits.length === 4) {
+                    if (verifyPin(digits)) {
+                      clearPin();
+                      setShowPinSetup(false);
+                    } else {
+                      setPinError('PIN 错误');
+                      setPinInput('');
+                    }
+                  }
+                } else {
+                  if (pinInput.length === 4) {
+                    setPinConfirm(digits);
+                  } else {
+                    setPinInput(digits);
+                  }
+                  if (pinInput.length === 4 && digits.length === 4) {
+                    // will confirm on next input
+                  }
+                }
+              }}
+              keyboardType="number-pad"
+              maxLength={pinMode === 'setup' ? (pinInput.length === 4 ? 4 : 4) : 4}
+              autoFocus
+              secureTextEntry
+              placeholder="请输入 4 位 PIN"
+              placeholderTextColor={colors.textMuted}
+            />
+            {pinMode === 'setup' && pinInput.length === 4 && (
+              <TextInput
+                style={[styles.pinInput, { color: colors.text, backgroundColor: colors.cardSecondary, borderColor: colors.border }]}
+                value={pinConfirm}
+                onChangeText={(text) => {
+                  const digits = text.replace(/\D/g, '').slice(0, 4);
+                  setPinConfirm(digits);
+                  if (digits.length === 4) {
+                    if (digits === pinInput) {
+                      setupPin(digits);
+                      setShowPinSetup(false);
+                    } else {
+                      setPinError('两次输入不一致');
+                      setPinInput('');
+                      setPinConfirm('');
+                    }
+                  }
+                }}
+                keyboardType="number-pad"
+                maxLength={4}
+                autoFocus
+                secureTextEntry
+                placeholder="请再次输入 PIN"
+                placeholderTextColor={colors.textMuted}
+              />
+            )}
+            <TouchableOpacity
+              style={[styles.modalCancel, { backgroundColor: colors.cardSecondary }]}
+              onPress={() => setShowPinSetup(false)}
+            >
+              <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>取消</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -218,4 +340,12 @@ const styles = StyleSheet.create({
   aboutTitle: { fontSize: 18, fontWeight: '600', textAlign: 'center' },
   aboutVersion: { fontSize: 12, marginTop: 4, textAlign: 'center' },
   aboutDesc: { fontSize: 12, marginTop: 8, textAlign: 'center' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { width: '85%', borderRadius: 16, padding: 24, alignItems: 'center' },
+  modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 8 },
+  modalSubtitle: { fontSize: 14, marginBottom: 16 },
+  pinInput: { width: '100%', borderWidth: 1, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 20, textAlign: 'center', marginBottom: 12, letterSpacing: 4 },
+  pinError: { fontSize: 13, marginBottom: 8, textAlign: 'center' },
+  modalCancel: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8, marginTop: 8 },
+  modalCancelText: { fontSize: 14, fontWeight: '500' },
 });

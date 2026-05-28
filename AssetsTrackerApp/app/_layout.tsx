@@ -1,9 +1,12 @@
-// 根布局 - 主题配置 + 深色/亮色切换
+// 根布局 - 主题配置 + 深色/亮色切换 + PIN 锁屏
 
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, AppState, AppStateStatus } from 'react-native';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
+import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import LockScreen from './lock';
+import { useEffect, useRef } from 'react';
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   const { colors } = useTheme();
@@ -29,6 +32,22 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
 
 function RootLayoutInner() {
   const { colors, isDark } = useTheme();
+  const { isLocked, pinEnabled, lock } = useAuth();
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        if (pinEnabled) {
+          lock();
+        }
+      }
+      appState.current = nextAppState;
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, [pinEnabled, lock]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -48,6 +67,7 @@ function RootLayoutInner() {
         <Tabs.Screen name="import" options={{ title: '导入', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="import" focused={focused} /> }} />
         <Tabs.Screen name="settings" options={{ title: '设置', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="settings" focused={focused} /> }} />
       </Tabs>
+      {isLocked && <LockScreen />}
     </View>
   );
 }
@@ -55,7 +75,9 @@ function RootLayoutInner() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <RootLayoutInner />
+      <AuthProvider>
+        <RootLayoutInner />
+      </AuthProvider>
     </ThemeProvider>
   );
 }
