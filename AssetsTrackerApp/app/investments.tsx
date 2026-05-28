@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Rect, Line, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../src/context/ThemeContext';
+import { useTranslation } from '../src/i18n/LanguageContext';
 
 import { recalculateAllInvestments } from '../src/services/profitCalculator';
 import { useAutoRefresh } from '../src/hooks/useAutoRefresh';
@@ -17,6 +18,7 @@ const CHART_PADDING = 32;
 
 export default function InvestmentsScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const [investments, setInvestments] = useState<any[]>([]);
 
@@ -96,7 +98,7 @@ export default function InvestmentsScreen() {
 
     return (
       <Card style={[styles.chartCard, { backgroundColor: colors.card }]}>
-        <Text style={[styles.chartTitle, { color: colors.text }]}>📊 累计收益</Text>
+        <Text style={[styles.chartTitle, { color: colors.text }]}>📊 {t('home.totalPnl')}</Text>
         <Svg width={chartW} height={CHART_HEIGHT}>
           {/* Zero line */}
           <Line x1={CHART_PADDING - 8} y1={zeroY} x2={chartW - 8} y2={zeroY} stroke={colors.border} strokeWidth={1} />
@@ -155,11 +157,11 @@ export default function InvestmentsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.summaryRow, { backgroundColor: colors.tabBar }]}>
         <View style={styles.summaryItem}>
-          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>总市值</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('investments.totalValue')}</Text>
           <Text style={[styles.summaryValue, { color: colors.text }]}>{formatCurrency(totalValue)}</Text>
         </View>
         <View style={styles.summaryItem}>
-          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>今日盈亏</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('home.dailyPnl')}</Text>
           <Text style={[styles.summaryValue, { color: totalDailyPnl >= 0 ? colors.gain : colors.loss }]}>{formatCurrency(totalDailyPnl)}</Text>
         </View>
       </View>
@@ -169,8 +171,8 @@ export default function InvestmentsScreen() {
 
         {investments.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>暂无投资</Text>
-            <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>点击下方按钮添加理财产品</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('investments.noData')}</Text>
+            <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>{t('investments.addHint')}</Text>
           </View>
         ) : investments.map((inv: any) => (
           <TouchableOpacity key={inv.id} onLongPress={() => handleDelete(inv.id)}>
@@ -186,7 +188,7 @@ export default function InvestmentsScreen() {
                     <Text style={[styles.invAmount, { color: colors.text }]}>{formatCurrency(inv.amount)}</Text>
                   </View>
                   <View>
-                    <Text style={[styles.invLabel, { color: colors.textSecondary }]}>累计盈亏</Text>
+                    <Text style={[styles.invLabel, { color: colors.textSecondary }]}>{t('investments.totalPnl')}</Text>
                     <Text style={[styles.invPnl, { color: (inv.totalPnl || 0) >= 0 ? colors.gain : colors.loss }]}>
                       {formatCurrency(inv.totalPnl || 0)}
                     </Text>
@@ -199,7 +201,7 @@ export default function InvestmentsScreen() {
       </ScrollView>
 
       <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/add-investment')}>
-        <Text style={[styles.addButtonText, { color: colors.accentText }]}>+ 添加投资</Text>
+        <Text style={[styles.addButtonText, { color: colors.accentText }]}>+ {t('investments.add')}</Text>
       </TouchableOpacity>
     </View>
   );

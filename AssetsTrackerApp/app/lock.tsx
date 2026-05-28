@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '../src/context/ThemeContext';
+import { useTranslation } from '../src/i18n/LanguageContext';
 import { useAuth } from '../src/hooks/useAuth';
 
 type Mode = 'verify' | 'setup' | 'confirm';
@@ -20,6 +21,7 @@ const PIN_LENGTH = 4;
 
 export default function LockScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { verifyPin, setupPin, pinEnabled } = useAuth();
 
   const [mode, setMode] = useState<Mode>('verify');
@@ -104,15 +106,15 @@ export default function LockScreen() {
 
   const getTitle = () => {
     if (errorMsg) return errorMsg;
-    if (mode === 'setup') return '设置 PIN';
-    if (mode === 'confirm') return '确认 PIN';
-    return '请输入 PIN';
+    if (mode === 'setup') return t('lock.title');
+    if (mode === 'confirm') return t('common.confirm');
+    return t('lock.enterPin');
   };
 
   const getSubtitle = () => {
-    if (mode === 'setup') return '请输入 4 位 PIN';
-    if (mode === 'confirm') return '请再次输入以确认';
-    return '请输入 PIN 以解锁';
+    if (mode === 'setup') return 'Enter 4-digit PIN';
+    if (mode === 'confirm') return 'Confirm PIN';
+    return 'Enter PIN to unlock';
   };
 
   return (

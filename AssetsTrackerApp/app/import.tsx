@@ -7,11 +7,13 @@ import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../src/context/ThemeContext';
+import { useTranslation } from '../src/i18n/LanguageContext';
 
 import { parseScreenshot, ParsedReceipt } from '../src/services/parser/ocr';
 
 export default function ImportScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
   const [result, setResult] = useState<ParsedReceipt | null>(null);
@@ -106,10 +108,10 @@ export default function ImportScreen() {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>📷 选择截图</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>📷 {t('import.title')}</Text>
           <View style={styles.imageRow}>
-            <Button mode="outlined" onPress={pickImage} textColor={colors.accent} style={styles.imgBtn} buttonColor="transparent">📁 从相册选择</Button>
-            <Button mode="outlined" onPress={takePhoto} textColor={colors.accent} style={styles.imgBtn} buttonColor="transparent">📷 拍照</Button>
+            <Button mode="outlined" onPress={pickImage} textColor={colors.accent} style={styles.imgBtn} buttonColor="transparent">📁 {t('import.pickImage')}</Button>
+            <Button mode="outlined" onPress={takePhoto} textColor={colors.accent} style={styles.imgBtn} buttonColor="transparent">📷 {t('import.takePhoto')}</Button>
           </View>
 
           {imageUri && (
@@ -127,11 +129,11 @@ export default function ImportScreen() {
             buttonColor={colors.accent}
             textColor={colors.accentText}
           >
-            {parsing ? '解析中...' : '🔍 解析截图'}
+            {parsing ? '...' : '🔍 ' + t('import.parse')}
           </Button>
 
           {parsing && (
-            <Text style={[styles.hint, { color: colors.textMuted }]}>解析需要几秒钟，请耐心等待</Text>
+            <Text style={[styles.hint, { color: colors.textMuted }]}>Parsing may take a few seconds</Text>
           )}
         </Card.Content>
       </Card>
@@ -139,7 +141,7 @@ export default function ImportScreen() {
       {result && (
         <Card style={[styles.card, { backgroundColor: colors.card }]}>
           <Card.Content>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>📋 解析结果</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>📋 {t('import.result')}</Text>
             <View style={[styles.resultBox, { backgroundColor: colors.cardSecondary }]}>
               <Text style={[styles.resultType, { color: colors.textSecondary }]}>类型: {result.type}</Text>
               {result.amount && <Text style={[styles.resultAmount, { color: colors.gain }]}>金额: ¥{result.amount.toLocaleString()}</Text>}
@@ -221,7 +223,7 @@ export default function ImportScreen() {
         style={[styles.saveBtn, { backgroundColor: colors.gain }]}
         buttonColor={colors.gain}
         textColor="#fff"
-      >💾 保存到资产</Button>
+      >💾 {t('import.save')}</Button>
     </ScrollView>
   );
 }

@@ -5,6 +5,7 @@ import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native
 import { Card } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../src/context/ThemeContext';
+import { useTranslation } from '../src/i18n/LanguageContext';
 import { getGoldPrice } from '../src/services/market/gold';
 import { getJPYRate } from '../src/services/market/fx';
 import { useExchangeRates } from '../src/hooks/useExchangeRates';
@@ -12,6 +13,7 @@ import { saveDailySnapshot } from '../src/services/historyService';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [goldPrice, setGoldPrice] = useState<any>(null);
   const [jpyRate, setJpyRate] = useState<any>(null);
   const { rateMap, defaultCurrency, loading: ratesLoading, convertToDefault } = useExchangeRates();
@@ -68,30 +70,40 @@ export default function HomeScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}>
       <Card style={[styles.card, styles.summaryCard, { backgroundColor: colors.accent }]}>
-        <Text style={[styles.summaryLabel, { color: 'rgba(255,255,255,0.8)' }]}>总资产</Text>
+        <Text style={[styles.summaryLabel, { color: 'rgba(255,255,255,0.8)' }]}>{t('home.totalAssets')}</Text>
         <Text style={styles.summaryAmount}>{formatCurrency(summary.totalValue)}</Text>
         {defaultCurrency !== 'CNY' && !ratesLoading && (
           <Text style={[styles.summaryConverted, { color: 'rgba(255,255,255,0.7)' }]}>≈ {formatCurrency(summary.totalValueConverted)} ({defaultCurrency})</Text>
         )}
         <View style={styles.summaryRow}>
-          <View><Text style={[styles.summaryItemLabel, { color: 'rgba(255,255,255,0.7)' }]}>流动资金</Text><Text style={styles.summaryItemValue}>{formatCurrency(summary.totalAssets)}</Text></View>
-          <View><Text style={[styles.summaryItemLabel, { color: 'rgba(255,255,255,0.7)' }]}>理财产品</Text><Text style={styles.summaryItemValue}>{formatCurrency(summary.totalInvestments)}</Text></View>
+          <View><Text style={[styles.summaryItemLabel, { color: 'rgba(255,255,255,0.7)' }]}>{t('home.liquidAssets')}</Text><Text style={styles.summaryItemValue}>{formatCurrency(summary.totalAssets)}</Text></View>
+          <View><Text style={[styles.summaryItemLabel, { color: 'rgba(255,255,255,0.7)' }]}>{t('home.investments')}</Text><Text style={styles.summaryItemValue}>{formatCurrency(summary.totalInvestments)}</Text></View>
         </View>
       </Card>
 
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>今日盈亏</Text>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>{t('home.dailyPnl')}</Text>
         <View style={styles.pnlRow}>
-          <View style={styles.pnlItem}><Text style={[styles.pnlLabel, { color: colors.textSecondary }]}>今日收益</Text><Text style={[styles.pnlValue, summary.dailyPnl >= 0 ? { color: colors.gain } : { color: colors.loss }]}>{formatCurrency(summary.dailyPnl)}</Text></View>
-          <View style={styles.pnlItem}><Text style={[styles.pnlLabel, { color: colors.textSecondary }]}>累计收益</Text><Text style={[styles.pnlValue, summary.totalPnl >= 0 ? { color: colors.gain } : { color: colors.loss }]}>{formatCurrency(summary.totalPnl)}</Text></View>
+          <View style={styles.pnlItem}><Text style={[styles.pnlLabel, { color: colors.textSecondary }]}>{t('home.dailyPnl')}</Text><Text style={[styles.pnlValue, summary.dailyPnl >= 0 ? { color: colors.gain } : { color: colors.loss }]}>{formatCurrency(summary.dailyPnl)}</Text></View>
+          <View style={styles.pnlItem}><Text style={[styles.pnlLabel, { color: colors.textSecondary }]}>{t('home.totalPnl')}</Text><Text style={[styles.pnlValue, summary.totalPnl >= 0 ? { color: colors.gain } : { color: colors.loss }]}>{formatCurrency(summary.totalPnl)}</Text></View>
         </View>
       </Card>
 
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>市场行情</Text>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>{t('home.market')}</Text>
         <View style={styles.quotesRow}>
-          <View style={[styles.quoteCard, { backgroundColor: colors.cardSecondary }]}><Text style={[styles.quoteName, { color: colors.text }]}>黄金现货</Text><Text style={[styles.quotePrice, { color: colors.text }]}>{goldPrice ? goldPrice.price.toFixed(2) : '--'}</Text><Text style={[styles.quoteUnit, { color: colors.textMuted }]}>元/克</Text><Text style={[styles.quoteChange, goldPrice?.changePercent >= 0 ? { color: colors.gain } : { color: colors.loss }]}>{goldPrice ? formatPercent(goldPrice.changePercent) : '--'}</Text></View>
-          <View style={[styles.quoteCard, { backgroundColor: colors.cardSecondary }]}><Text style={[styles.quoteName, { color: colors.text }]}>日元汇率</Text><Text style={[styles.quotePrice, { color: colors.text }]}>{jpyRate ? jpyRate.rate.toFixed(4) : '--'}</Text><Text style={[styles.quoteUnit, { color: colors.textMuted }]}>JPY/CNY</Text><Text style={[styles.quoteChange, { color: colors.textMuted }]}>--</Text></View>
+          <View style={[styles.quoteCard, { backgroundColor: colors.cardSecondary }]}>
+            <Text style={[styles.quoteName, { color: colors.text }]}>{t('home.gold')}</Text>
+            <Text style={[styles.quotePrice, { color: colors.text }]}>{goldPrice ? goldPrice.price.toFixed(2) : '--'}</Text>
+            <Text style={[styles.quoteUnit, { color: colors.textMuted }]}>元/克</Text>
+            <Text style={[styles.quoteChange, goldPrice?.changePercent >= 0 ? { color: colors.gain } : { color: colors.loss }]}>{goldPrice ? formatPercent(goldPrice.changePercent) : '--'}</Text>
+          </View>
+          <View style={[styles.quoteCard, { backgroundColor: colors.cardSecondary }]}>
+            <Text style={[styles.quoteName, { color: colors.text }]}>{t('home.jpy')}</Text>
+            <Text style={[styles.quotePrice, { color: colors.text }]}>{jpyRate ? jpyRate.rate.toFixed(4) : '--'}</Text>
+            <Text style={[styles.quoteUnit, { color: colors.textMuted }]}>JPY/CNY</Text>
+            <Text style={[styles.quoteChange, { color: colors.textMuted }]}>--</Text>
+          </View>
         </View>
       </Card>
     </ScrollView>

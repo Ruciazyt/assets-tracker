@@ -7,21 +7,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../src/context/ThemeContext';
 import { useAuth } from '../src/hooks/useAuth';
+import { useTranslation } from '../src/i18n/LanguageContext';
 import { getAlertRules, saveAlertRule, deleteAlertRule, toggleAlertRule, AlertRule } from '../src/services/alertService';
 import { Investment } from '../src/types/investment';
 
 const currencies = ['CNY', 'USD', 'HKD', 'JPY', 'EUR', 'GBP'];
 
-const refreshOptions = [
-  { label: '关闭', value: 0 },
-  { label: '15秒', value: 15 },
-  { label: '30秒', value: 30 },
-  { label: '60秒', value: 60 },
-  { label: '5分钟', value: 300 },
-];
-
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
+  const { lang, setLang, t } = useTranslation();
   const { pinEnabled, verifyPin, setupPin, clearPin } = useAuth();
   const [defaultCurrency, setDefaultCurrency] = useState('CNY');
   const [refreshInterval, setRefreshInterval] = useState(0);
@@ -72,7 +66,7 @@ export default function SettingsScreen() {
     const existing = await AsyncStorage.getItem('@assets_tracker/settings');
     const updated = { ...JSON.parse(existing || '{}'), defaultCurrency: currency };
     await AsyncStorage.setItem('@assets_tracker/settings', JSON.stringify(updated));
-    Alert.alert('成功', `默认货币已设置为 ${currency}`);
+    Alert.alert(t('common.success'), `Default currency set to ${currency}`);
   };
 
   const handleRefreshChange = async (value: number) => {
@@ -81,8 +75,16 @@ export default function SettingsScreen() {
     const updated = { ...JSON.parse(existing || '{}'), refreshInterval: value };
     await AsyncStorage.setItem('@assets_tracker/settings', JSON.stringify(updated));
     const label = refreshOptions.find(o => o.value === value)?.label ?? String(value);
-    Alert.alert('成功', `自动刷新已设置为 ${label}`);
+    Alert.alert(t('common.success'), `Auto refresh set to ${label}`);
   };
+
+  const refreshOptions = [
+    { label: t('common.cancel'), value: 0 },
+    { label: '15s', value: 15 },
+    { label: '30s', value: 30 },
+    { label: '60s', value: 60 },
+    { label: '5min', value: 300 },
+  ];
 
   const handleExportData = async () => {
     setIsExporting(true);
@@ -101,24 +103,24 @@ export default function SettingsScreen() {
 
       const jsonStr = JSON.stringify(exportData, null, 2);
       await Clipboard.setStringAsync(jsonStr);
-      Alert.alert('导出成功', `数据已复制到剪贴板，共 ${assets ? JSON.parse(assets).length : 0} 条资产`);
+      Alert.alert(t('common.success'), `Data copied to clipboard: ${assets ? JSON.parse(assets).length : 0} assets`);
     } catch (e) {
-      Alert.alert('导出失败', '无法导出数据，请重试');
+      Alert.alert(t('common.error'), 'Failed to export data');
     } finally {
       setIsExporting(false);
     }
   };
 
   const handleImportData = () => {
-    Alert.alert('导入数据', '当前版本暂不支持此功能');
+    Alert.alert(t('import.title'), 'Not supported in current version');
   };
 
   const handleClearData = () => {
-    Alert.alert('确认清除', '确定要清除所有数据吗？此操作不可恢复。', [
-      { text: '取消', style: 'cancel' },
-      { text: '清除', style: 'destructive', onPress: async () => {
+    Alert.alert(t('common.confirm'), t('settings.clearData') + '?', [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: async () => {
         await AsyncStorage.multiRemove(['@assets_tracker/assets', '@assets_tracker/investments']);
-        Alert.alert('成功', '所有数据已清除');
+        Alert.alert(t('common.success'), 'All data cleared');
       }},
     ]);
   };
@@ -145,12 +147,12 @@ export default function SettingsScreen() {
 
   const handleSaveAlert = async () => {
     if (!alertInvSelect) {
-      Alert.alert('请选择投资品种');
+      Alert.alert(t('common.error'), 'Please select an investment');
       return;
     }
     const price = parseFloat(alertTargetPrice);
     if (isNaN(price) || price <= 0) {
-      Alert.alert('请输入有效的目标价格');
+      Alert.alert(t('common.error'), 'Please enter a valid target price');
       return;
     }
     const ruleData = {
@@ -178,9 +180,9 @@ export default function SettingsScreen() {
   };
 
   const handleDeleteAlert = async (id: string) => {
-    Alert.alert('确认删除', '确定要删除这条提醒吗？', [
-      { text: '取消', style: 'cancel' },
-      { text: '删除', style: 'destructive', onPress: async () => {
+    Alert.alert(t('common.confirm'), t('common.delete') + '?', [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: async () => {
         await deleteAlertRule(id);
         loadAlertRules();
       }},
@@ -201,11 +203,11 @@ export default function SettingsScreen() {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>主题设置</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.theme')}</Text>
           <View style={[styles.themeRow, { backgroundColor: colors.cardSecondary, borderColor: colors.border }]}>
             <View>
-              <Text style={[styles.themeLabel, { color: colors.text }]}>深色模式</Text>
-              <Text style={[styles.themeDesc, { color: colors.textSecondary }]}>{isDark ? '当前：深色主题' : '当前：浅色主题'}</Text>
+              <Text style={[styles.themeLabel, { color: colors.text }]}>{t('settings.darkMode')}</Text>
+              <Text style={[styles.themeDesc, { color: colors.textSecondary }]}>{isDark ? t('settings.darkMode') : t('settings.lightMode')}</Text>
             </View>
             <Switch
               value={isDark}
@@ -217,10 +219,30 @@ export default function SettingsScreen() {
         </Card.Content>
       </Card>
 
+      {/* Language */}
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>数据自动刷新</Text>
-          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>设置数据自动刷新间隔</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.language')}</Text>
+          <View style={styles.langRow}>
+            <TouchableOpacity
+              style={[styles.langBtn, { backgroundColor: colors.cardSecondary }, lang === 'CN' && { backgroundColor: colors.accent }]}
+              onPress={() => setLang('CN')}
+            >
+              <Text style={[styles.langBtnText, { color: colors.textSecondary }, lang === 'CN' && { color: colors.accentText, fontWeight: '600' }]}>🇨🇳 中文</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.langBtn, { backgroundColor: colors.cardSecondary }, lang === 'EN' && { backgroundColor: colors.accent }]}
+              onPress={() => setLang('EN')}
+            >
+              <Text style={[styles.langBtnText, { color: colors.textSecondary }, lang === 'EN' && { color: colors.accentText, fontWeight: '600' }]}>🇺🇸 English</Text>
+            </TouchableOpacity>
+          </View>
+        </Card.Content>
+      </Card>
+
+      <Card style={[styles.card, { backgroundColor: colors.card }]}>
+        <Card.Content>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.refreshInterval')}</Text>
           <View style={styles.refreshGrid}>
             {refreshOptions.map(opt => (
               <TouchableOpacity
@@ -249,7 +271,7 @@ export default function SettingsScreen() {
 
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>货币设置</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.currency')}</Text>
           <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>设置默认显示货币</Text>
           <View style={styles.currencyGrid}>
             {currencies.map(c => (
@@ -267,35 +289,33 @@ export default function SettingsScreen() {
 
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>数据备份</Text>
-          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>导出或导入资产数据</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.backup')}</Text>
           <TouchableOpacity style={[styles.exportBtn, { backgroundColor: colors.accent }]} onPress={handleExportData} disabled={isExporting}>
-            <Text style={[styles.exportBtnText, { color: colors.accentText }]}>{isExporting ? '导出中...' : '📤 导出数据备份'}</Text>
+            <Text style={[styles.exportBtnText, { color: colors.accentText }]}>{isExporting ? '...' : '📤 ' + t('settings.export')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.importBtn, { backgroundColor: colors.cardSecondary }]} onPress={handleImportData}>
-            <Text style={[styles.importBtnText, { color: colors.accent }]}>📥 导入数据备份</Text>
+            <Text style={[styles.importBtnText, { color: colors.accent }]}>📥 {t('settings.import')}</Text>
           </TouchableOpacity>
         </Card.Content>
       </Card>
 
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>数据管理</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.clearData')}</Text>
           <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
-            <Text style={styles.dangerBtnText}>🗑️ 清除所有数据</Text>
+            <Text style={styles.dangerBtnText}>🗑️ {t('common.delete')} {t('settings.clearData')}</Text>
           </TouchableOpacity>
         </Card.Content>
       </Card>
 
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>PIN 保护</Text>
-          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>设置应用锁定 PIN</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.pin')}</Text>
           <View style={[styles.themeRow, { backgroundColor: colors.cardSecondary, borderColor: colors.border }]}>
             <View>
-              <Text style={[styles.themeLabel, { color: colors.text }]}>PIN 保护</Text>
+              <Text style={[styles.themeLabel, { color: colors.text }]}>{t('settings.pin')}</Text>
               <Text style={[styles.themeDesc, { color: colors.textSecondary }]}>
-                {pinEnabled ? '已开启' : '已关闭'}
+                {pinEnabled ? t('settings.pinEnabled') : t('settings.pinDisabled')}
               </Text>
             </View>
             <Switch
@@ -324,10 +344,9 @@ export default function SettingsScreen() {
       {/* 价格提醒 */}
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>价格提醒</Text>
-          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>当投资品种价格达到目标时通知</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.alerts')}</Text>
           <TouchableOpacity style={[styles.exportBtn, { backgroundColor: colors.accent }]} onPress={openNewAlert}>
-            <Text style={[styles.exportBtnText, { color: colors.accentText }]}>🔔 添加价格提醒</Text>
+            <Text style={[styles.exportBtnText, { color: colors.accentText }]}>🔔 {t('settings.addAlert')}</Text>
           </TouchableOpacity>
           {alertRules.length > 0 && (
             <View style={styles.alertRuleList}>
@@ -336,8 +355,8 @@ export default function SettingsScreen() {
                   <View style={styles.alertRuleInfo}>
                     <Text style={[styles.alertRuleName, { color: colors.text }]}>{rule.investmentName}</Text>
                     <Text style={[styles.alertRuleDetail, { color: colors.textSecondary }]}>
-                      {rule.direction === 'above' ? '📈 突破' : '📉 跌破'} ¥{rule.targetPrice.toFixed(rule.subtype === 'fund' ? 4 : 2)}
-                      {!rule.enabled && ' · 已禁用'}
+                      {rule.direction === 'above' ? '📈 ' : '📉 '}{t('settings.alerts')} ¥{rule.targetPrice.toFixed(rule.subtype === 'fund' ? 4 : 2)}
+                      {!rule.enabled && ' · ' + t('settings.pinDisabled')}
                     </Text>
                   </View>
                   <View style={styles.alertRuleActions}>
@@ -348,10 +367,10 @@ export default function SettingsScreen() {
                       thumbColor="#fff"
                     />
                     <TouchableOpacity onPress={() => openEditAlert(rule)} style={styles.alertRuleBtn}>
-                      <Text style={[styles.alertRuleBtnText, { color: colors.accent }]}>编辑</Text>
+                      <Text style={[styles.alertRuleBtnText, { color: colors.accent }]}>{t('common.edit')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleDeleteAlert(rule.id)} style={styles.alertRuleBtn}>
-                      <Text style={[styles.alertRuleBtnText, { color: colors.loss }]}>删除</Text>
+                      <Text style={[styles.alertRuleBtnText, { color: colors.loss }]}>{t('common.delete')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -364,10 +383,10 @@ export default function SettingsScreen() {
       {/* 关于 */}
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>关于</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('settings.about')}</Text>
           <Text style={[styles.aboutTitle, { color: colors.text }]}>Assets Tracker</Text>
-          <Text style={[styles.aboutVersion, { color: colors.textSecondary }]}>版本 1.0.0</Text>
-          <Text style={[styles.aboutDesc, { color: colors.textMuted }]}>资产追踪器 - 帮助您管理流动资金、固定资产和理财产品</Text>
+          <Text style={[styles.aboutVersion, { color: colors.textSecondary }]}>Version 1.0.0</Text>
+          <Text style={[styles.aboutDesc, { color: colors.textMuted }]}>Assets Tracker - Manage cash, assets and investments</Text>
         </Card.Content>
       </Card>
 
@@ -376,17 +395,17 @@ export default function SettingsScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {alertEditRule ? '编辑价格提醒' : '添加价格提醒'}
+              {alertEditRule ? t('common.edit') : t('settings.addAlert')}
             </Text>
 
             {/* 投资品种选择 */}
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>投资品种</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Investment</Text>
             <TouchableOpacity
               style={[styles.pickerBtn, { backgroundColor: colors.cardSecondary, borderColor: colors.border }]}
               onPress={() => setShowInvPicker(!showInvPicker)}
             >
               <Text style={[styles.pickerBtnText, { color: alertInvSelect ? colors.text : colors.textMuted }]}>
-                {alertInvSelect ? `${alertInvSelect.name} (${subtypeLabel[alertInvSelect.subtype] ?? alertInvSelect.subtype})` : '请选择投资品种'}
+                {alertInvSelect ? `${alertInvSelect.name} (${subtypeLabel[alertInvSelect.subtype] ?? alertInvSelect.subtype})` : 'Select investment'}
               </Text>
             </TouchableOpacity>
             {showInvPicker && (
@@ -404,13 +423,13 @@ export default function SettingsScreen() {
                       <Text style={[styles.invPickerItemSub, { color: colors.textMuted }]}>{subtypeLabel[item.subtype] ?? item.subtype}</Text>
                     </TouchableOpacity>
                   )}
-                  ListEmptyComponent={<Text style={[styles.invPickerEmpty, { color: colors.textMuted }]}>暂无语料</Text>}
+                  ListEmptyComponent={<Text style={[styles.invPickerEmpty, { color: colors.textMuted }]}>No investments</Text>}
                 />
               </View>
             )}
 
             {/* 方向选择 */}
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>触发方向</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Direction</Text>
             <View style={styles.directionRow}>
               {(['above', 'below'] as const).map(dir => (
                 <TouchableOpacity
@@ -419,29 +438,29 @@ export default function SettingsScreen() {
                   onPress={() => setAlertDirection(dir)}
                 >
                   <Text style={[styles.directionBtnText, { color: colors.textSecondary }, alertDirection === dir && { color: colors.accentText, fontWeight: '600' }]}>
-                    {dir === 'above' ? '📈 价格突破' : '📉 价格跌破'}
+                    {dir === 'above' ? '📈 Price Above' : '📉 Price Below'}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* 目标价格 */}
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>目标价格 (¥)</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Target Price (¥)</Text>
             <TextInput
               style={[styles.alertPriceInput, { color: colors.text, backgroundColor: colors.cardSecondary, borderColor: colors.border }]}
               value={alertTargetPrice}
               onChangeText={setAlertTargetPrice}
               keyboardType="decimal-pad"
-              placeholder="例如 885.00"
+              placeholder="e.g. 885.00"
               placeholderTextColor={colors.textMuted}
             />
 
             <View style={styles.modalBtnRow}>
               <TouchableOpacity style={[styles.modalCancel, { backgroundColor: colors.cardSecondary }]} onPress={() => setShowAlertModal(false)}>
-                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>取消</Text>
+                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>{t('common.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.exportBtn, { backgroundColor: colors.accent, flex: 1, marginLeft: 12 }]} onPress={handleSaveAlert}>
-                <Text style={[styles.exportBtnText, { color: colors.accentText }]}>保存</Text>
+                <Text style={[styles.exportBtnText, { color: colors.accentText }]}>{t('common.save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -453,10 +472,10 @@ export default function SettingsScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {pinMode === 'setup' ? '设置 PIN' : '验证 PIN'}
+              {pinMode === 'setup' ? 'Set PIN' : 'Verify PIN'}
             </Text>
             {pinMode === 'setup' && pinInput.length === 4 && (
-              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>请再次输入以确认</Text>
+              <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>Please confirm</Text>
             )}
             {pinError ? <Text style={[styles.pinError, { color: colors.loss }]}>{pinError}</Text> : null}
             <TextInput
@@ -472,7 +491,7 @@ export default function SettingsScreen() {
                       clearPin();
                       setShowPinSetup(false);
                     } else {
-                      setPinError('PIN 错误');
+                      setPinError('PIN error');
                       setPinInput('');
                     }
                   }
@@ -488,7 +507,7 @@ export default function SettingsScreen() {
               maxLength={4}
               autoFocus
               secureTextEntry
-              placeholder="请输入 4 位 PIN"
+              placeholder="Enter 4-digit PIN"
               placeholderTextColor={colors.textMuted}
             />
             {pinMode === 'setup' && pinInput.length === 4 && (
@@ -503,7 +522,7 @@ export default function SettingsScreen() {
                       setupPin(digits);
                       setShowPinSetup(false);
                     } else {
-                      setPinError('两次输入不一致');
+                      setPinError('PINs do not match');
                       setPinInput('');
                       setPinConfirm('');
                     }
@@ -513,7 +532,7 @@ export default function SettingsScreen() {
                 maxLength={4}
                 autoFocus
                 secureTextEntry
-                placeholder="请再次输入 PIN"
+                placeholder="Confirm PIN"
                 placeholderTextColor={colors.textMuted}
               />
             )}
@@ -521,7 +540,7 @@ export default function SettingsScreen() {
               style={[styles.modalCancel, { backgroundColor: colors.cardSecondary }]}
               onPress={() => setShowPinSetup(false)}
             >
-              <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>取消</Text>
+              <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -539,6 +558,9 @@ const styles = StyleSheet.create({
   themeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderRadius: 8, borderWidth: 1, marginTop: 8 },
   themeLabel: { fontSize: 16, fontWeight: '600' },
   themeDesc: { fontSize: 12, marginTop: 2 },
+  langRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  langBtn: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  langBtnText: { fontSize: 15, fontWeight: '500' },
   refreshGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   refreshBtn: { paddingHorizontal: 14, paddingVertical: 12, borderRadius: 8, minWidth: 70, alignItems: 'center' },
   refreshBtnText: { fontSize: 14 },

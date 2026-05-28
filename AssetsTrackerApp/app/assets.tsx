@@ -6,10 +6,12 @@ import { Card, SegmentedButtons } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../src/context/ThemeContext';
+import { useTranslation } from '../src/i18n/LanguageContext';
 import { useAutoRefresh } from '../src/hooks/useAutoRefresh';
 
 export default function AssetsScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const [assets, setAssets] = useState<any[]>([]);
   const [filter, setFilter] = useState('all');
@@ -53,9 +55,9 @@ export default function AssetsScreen() {
           value={filter}
           onValueChange={setFilter}
           buttons={[
-            { value: 'all', label: `全部` },
-            { value: 'cash', label: `流动资金` },
-            { value: 'fixed', label: `固定资产` },
+            { value: 'all', label: t('common.confirm') + ' ' },
+            { value: 'cash', label: t('home.liquidAssets') },
+            { value: 'fixed', label: t('assets.title') },
           ]}
         />
       </View>

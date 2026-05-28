@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text, StyleSheet, AppState, AppStateStatus } from 'react-native';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
+import { LanguageProvider } from '../src/i18n/LanguageContext';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import LockScreen from './lock';
 import { useEffect, useRef } from 'react';
@@ -86,9 +87,11 @@ function RootLayoutInner() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <RootLayoutInner />
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <RootLayoutInner />
+        </AuthProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }
