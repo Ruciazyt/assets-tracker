@@ -39,7 +39,6 @@ jobs:
         run: |
           mkdir -p /home/runner/work/_temp/android-sdk
           echo "sdk.dir=/home/runner/work/_temp/android-sdk" >> AssetsTrackerApp/android/local.properties
-          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
 
       - name: Install dependencies
         run: |
@@ -52,63 +51,34 @@ jobs:
           rm -rf android
           npx expo prebuild --platform android --clean
 
+      - name: Update settings.gradle for expo-module-gradle-plugin
+        run: |
+          cd AssetsTrackerApp/android
+          # Add expo-modules-core and expo-module-gradle-plugin includeBuild to settings.gradle
+          if ! grep -q "expo-module-gradle-plugin" settings.gradle; then
+            # Insert includeBuild for expo-modules-core and expo-module-gradle-plugin after pluginManagement
+            sed -i '/^pluginManagement {/,/^}/{ /^[[:space:]]*$/a\    includeBuild(new File(["node", "--print", "require.resolve('\''expo-modules-core\/package.json'\'', { paths: [require.resolve('\''expo\/package.json'\'') ] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "\/android"))\n    includeBuild(new File(["node", "--print", "require.resolve('\''expo-module-gradle-plugin\/package.json'\'', { paths: [require.resolve('\''expo\/package.json'\'') ] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath()))' settings.gradle
+          fi
+
       - name: Build APK
         env:
           NODE_ENV: production
         run: |
           cd AssetsTrackerApp/android
-          # Add expo module plugin to settings.gradle pluginManagement
-          if ! grep -q "expo-module-gradle-plugin" settings.gradle; then
-            cat > settings.gradle.tmp << 'SETTINGS_EOF'
-pluginManagement {
-    includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().toString())
-    repositories {
-        gradlePluginPortal()
-        google()
-        mavenCentral()
-    }
-}
-plugins { id("com.facebook.react.settings") }
-
-extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
-  if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
-    ex.autolinkLibrariesFromCommand()
-  } else {
-    def command = [
-      'node',
-      '--no-warnings',
-      '--eval',
-      'require(require.resolve(\'expo-modules-autolinking\', { paths: [require.resolve(\'expo/package.json\')] }))(process.argv.slice(1))',
-      'react-native-config',
-      '--json',
-      '--platform',
-      'android'
-    ].toList()
-    ex.autolinkLibrariesFromCommand(command)
-  }
-}
-
-rootProject.name = 'AssetsTrackerApp'
-
-dependencyResolutionManagement {
-  versionCatalogs {
-    reactAndroidLibs {
-      from(files(new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../gradle/libs.versions.toml")))
-    }
-  }
-}
-
-include ':app'
-includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile())
-SETTINGS_EOF
-            mv settings.gradle.tmp settings.gradle
-          fi
-
           rm -rf ~/.gradle/caches/build-cache-*
-          ./gradlew assembleRelease --no-build-cache 2>&1 | tee /tmp/gradle.log
+          ./gradlew :app:assembleRelease --no-build-cache -Dorg.gradle.jvmargs="-Xmx1024m" --no-daemon -x test 2>&1 | tee /tmp/gradle.log
           if [ ${PIPESTATUS[0]} -ne 0 ]; then
             echo "=== GRADLE FAILURE ==="
-            grep -B2 -A8 "FAILURE:\|expo-module-gradle-plugin\|SoftwareComponent" /tmp/gradle.log | tail -40
+            tail -30 /tmp/gradle.log
+            exit 1
+          fi
+
+      - name: Verify APK exists
+        run: |
+          APK=AssetsTrackerApp/android/app/build/outputs/apk/release/app-release.apk
+          if [ ! -f "$APK" ]; then
+            echo "APK not found at $APK"
+            ls -la AssetsTrackerApp/android/app/build/outputs/apk/ 2>/dev/null || true
             exit 1
           fi
 
@@ -121,8 +91,8 @@ SETTINGS_EOF
           tag_name: ${{ steps.version.outputs.TAG }}
           name: ${{ steps.version.outputs.TAG }}
           body: |
-            Assets Tracker ${{ steps.version.outputs.VERSION }} (构建 #${{ steps.version.outputs.RUN_NUMBER }})
-            - 自动构建发布
+            Assets Tracker ${{ steps.version.outputs.VERSION }} (Build #${{ steps.version.outputs.RUN_NUMBER }})
+            - Auto-built via GitHub Actions
             - Commit: ${{ github.sha }}
           draft: false
           prerelease: false
