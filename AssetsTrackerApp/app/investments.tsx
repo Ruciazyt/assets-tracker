@@ -6,13 +6,44 @@ import { Card } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { recalculateAllInvestments } from '../../../src/services/profitCalculator.js';
+
+const UPDATE_KEY = '@assets_tracker/profit_updates';
+
 export default function InvestmentsScreen() {
   const router = useRouter();
   const [investments, setInvestments] = useState<any[]>([]);
 
+  const recalculateAndMerge = async (data: any[]) => {
+    if (!data.length) return data;
+    try {
+      const updates = await recalculateAllInvestments(data);
+      const updateMap: Record<string, any> = {};
+      for (const u of updates) {
+        updateMap[u.id] = u;
+      }
+      return data.map((inv: any) => {
+        const u = updateMap[inv.id];
+        if (!u) return inv;
+        return {
+          ...inv,
+          newPrice: u.newPrice,
+          dailyPnl: u.dailyPnl,
+          dailyReturn: u.dailyReturn,
+          totalPnl: u.totalPnl,
+        };
+      });
+    } catch (e) {
+      console.error('[investments] recalculate error:', e);
+      return data;
+    }
+  };
+
   const loadData = async () => {
-    const data = await AsyncStorage.getItem('@assets_tracker/investments');
-    setInvestments(data ? JSON.parse(data) : []);
+    const raw = await AsyncStorage.getItem('@assets_tracker/investments');
+    const data = raw ? JSON.parse(raw) : [];
+    const updated = await recalculateAndMerge(data);
+    setInvestments(updated);
   };
 
   useEffect(() => { loadData(); const interval = setInterval(loadData, 30000); return () => clearInterval(interval); }, []);
