@@ -37,12 +37,14 @@ jobs:
 
       - name: Setup Android SDK
         run: |
-          echo "sdk.dir=/home/runner/work/_temp/android-sdk" >> AssetsTrackerApp/android/local.properties
           mkdir -p /home/runner/work/_temp/android-sdk
+          echo "sdk.dir=/home/runner/work/_temp/android-sdk" >> AssetsTrackerApp/android/local.properties
           echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
 
       - name: Install dependencies
-        run: cd AssetsTrackerApp && npm ci
+        run: |
+          cd AssetsTrackerApp
+          npm install --legacy-peer-deps
 
       - name: Expo prebuild
         run: |
@@ -55,8 +57,60 @@ jobs:
           NODE_ENV: production
         run: |
           cd AssetsTrackerApp/android
+          # Add expo module plugin to settings.gradle pluginManagement
+          if ! grep -q "expo-module-gradle-plugin" settings.gradle; then
+            cat > settings.gradle.tmp << 'SETTINGS_EOF'
+pluginManagement {
+    includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().toString())
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+}
+plugins { id("com.facebook.react.settings") }
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+  if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
+    ex.autolinkLibrariesFromCommand()
+  } else {
+    def command = [
+      'node',
+      '--no-warnings',
+      '--eval',
+      'require(require.resolve(\'expo-modules-autolinking\', { paths: [require.resolve(\'expo/package.json\')] }))(process.argv.slice(1))',
+      'react-native-config',
+      '--json',
+      '--platform',
+      'android'
+    ].toList()
+    ex.autolinkLibrariesFromCommand(command)
+  }
+}
+
+rootProject.name = 'AssetsTrackerApp'
+
+dependencyResolutionManagement {
+  versionCatalogs {
+    reactAndroidLibs {
+      from(files(new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../gradle/libs.versions.toml")))
+    }
+  }
+}
+
+include ':app'
+includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile())
+SETTINGS_EOF
+            mv settings.gradle.tmp settings.gradle
+          fi
+
           rm -rf ~/.gradle/caches/build-cache-*
-          ./gradlew assembleRelease --no-build-cache
+          ./gradlew assembleRelease --no-build-cache 2>&1 | tee /tmp/gradle.log
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "=== GRADLE FAILURE ==="
+            grep -B2 -A8 "FAILURE:\|expo-module-gradle-plugin\|SoftwareComponent" /tmp/gradle.log | tail -40
+            exit 1
+          fi
 
       - name: Rename APK
         run: cp AssetsTrackerApp/android/app/build/outputs/apk/release/app-release.apk /tmp/assets-tracker-${{ steps.version.outputs.VERSION }}-build${{ steps.version.outputs.RUN_NUMBER }}.apk
