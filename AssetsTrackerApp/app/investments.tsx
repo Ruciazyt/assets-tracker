@@ -1,15 +1,18 @@
 // 投资页面
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { Card } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Svg, { Rect, Line, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../src/context/ThemeContext';
 
 import { recalculateAllInvestments } from '../src/services/profitCalculator';
 
-const UPDATE_KEY = '@assets_tracker/profit_updates';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CHART_HEIGHT = 180;
+const CHART_PADDING = 32;
 
 export default function InvestmentsScreen() {
   const { colors } = useTheme();
@@ -74,6 +77,78 @@ export default function InvestmentsScreen() {
     return map[inv.subtype] || inv.subtype;
   };
 
+  // Chart rendering
+  const renderChart = () => {
+    if (investments.length === 0) return null;
+
+    const pnlData = investments
+      .map((inv: any) => ({ name: inv.name.slice(0, 4), pnl: inv.totalPnl || 0 }))
+      .filter(d => d.pnl !== 0);
+
+    if (pnlData.length === 0) return null;
+
+    const maxAbs = Math.max(...pnlData.map(d => Math.abs(d.pnl)));
+    const chartW = SCREEN_WIDTH - 64;
+    const barW = Math.min(40, (chartW - CHART_PADDING * 2) / pnlData.length - 8);
+    const zeroY = CHART_HEIGHT * 0.6;
+
+    return (
+      <Card style={[styles.chartCard, { backgroundColor: colors.card }]}>
+        <Text style={[styles.chartTitle, { color: colors.text }]}>📊 累计收益</Text>
+        <Svg width={chartW} height={CHART_HEIGHT}>
+          {/* Zero line */}
+          <Line x1={CHART_PADDING - 8} y1={zeroY} x2={chartW - 8} y2={zeroY} stroke={colors.border} strokeWidth={1} />
+          {/* Zero label */}
+          <SvgText
+            x={CHART_PADDING - 12}
+            y={zeroY + 4}
+            fontSize={10}
+            fill={colors.textMuted}
+            textAnchor="end"
+          >0</SvgText>
+          {pnlData.map((d: any, i: number) => {
+            const absH = maxAbs > 0 ? (Math.abs(d.pnl) / maxAbs) * (CHART_HEIGHT * 0.45) : 0;
+            const barX = CHART_PADDING + i * ((chartW - CHART_PADDING * 2) / pnlData.length) + (((chartW - CHART_PADDING * 2) / pnlData.length) - barW) / 2;
+            const barY = d.pnl >= 0 ? zeroY - absH : zeroY;
+            const barColor = d.pnl >= 0 ? colors.gain : colors.loss;
+            const labelY = d.pnl >= 0 ? zeroY + 12 : zeroY - absH - 4;
+
+            return (
+              <React.Fragment key={i}>
+                <Rect
+                  x={barX}
+                  y={barY}
+                  width={barW}
+                  height={absH}
+                  rx={4}
+                  fill={barColor}
+                />
+                <SvgText
+                  x={barX + barW / 2}
+                  y={labelY}
+                  fontSize={9}
+                  fill={colors.textMuted}
+                  textAnchor="middle"
+                >
+                  {d.pnl >= 0 ? '+' : ''}{d.pnl.toFixed(0)}
+                </SvgText>
+                <SvgText
+                  x={barX + barW / 2}
+                  y={CHART_HEIGHT - 4}
+                  fontSize={9}
+                  fill={colors.textMuted}
+                  textAnchor="middle"
+                >
+                  {d.name}
+                </SvgText>
+              </React.Fragment>
+            );
+          })}
+        </Svg>
+      </Card>
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.summaryRow, { backgroundColor: colors.tabBar }]}>
@@ -88,6 +163,8 @@ export default function InvestmentsScreen() {
       </View>
 
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+        {renderChart()}
+
         {investments.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>暂无投资</Text>
@@ -107,8 +184,10 @@ export default function InvestmentsScreen() {
                     <Text style={[styles.invAmount, { color: colors.text }]}>{formatCurrency(inv.amount)}</Text>
                   </View>
                   <View>
-                    <Text style={[styles.invLabel, { color: colors.textSecondary }]}>今日盈亏</Text>
-                    <Text style={[styles.invPnl, { color: inv.dailyPnl >= 0 ? colors.gain : colors.loss }]}>{formatCurrency(inv.dailyPnl)} ({formatPercent(inv.dailyReturn)})</Text>
+                    <Text style={[styles.invLabel, { color: colors.textSecondary }]}>累计盈亏</Text>
+                    <Text style={[styles.invPnl, { color: (inv.totalPnl || 0) >= 0 ? colors.gain : colors.loss }]}>
+                      {formatCurrency(inv.totalPnl || 0)}
+                    </Text>
                   </View>
                 </View>
               </Card.Content>
@@ -130,6 +209,8 @@ const styles = StyleSheet.create({
   summaryItem: { flex: 1, alignItems: 'center' },
   summaryLabel: { fontSize: 12 },
   summaryValue: { fontSize: 20, fontWeight: '600', marginTop: 2 },
+  chartCard: { borderRadius: 12, marginBottom: 12, padding: 12, alignItems: 'center' },
+  chartTitle: { fontSize: 14, fontWeight: '600', marginBottom: 4, alignSelf: 'flex-start' },
   list: { flex: 1 },
   listContent: { padding: 16 },
   emptyState: { alignItems: 'center', paddingVertical: 64 },
