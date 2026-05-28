@@ -1,4 +1,4 @@
-// 根布局 - 主题配置 + 深色/亮色切换 + PIN 锁屏
+// 根布局 - 主题配置 + 深色/亮色切换 + PIN 锁屏 + 价格提醒
 
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +7,9 @@ import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import LockScreen from './lock';
 import { useEffect, useRef } from 'react';
+import { usePriceAlerts } from '../src/hooks/usePriceAlerts';
+import { useAutoRefresh } from '../src/hooks/useAutoRefresh';
+import AlertBanner from '../src/components/AlertBanner';
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   const { colors } = useTheme();
@@ -34,6 +37,13 @@ function RootLayoutInner() {
   const { colors, isDark } = useTheme();
   const { isLocked, pinEnabled, lock } = useAuth();
   const appState = useRef(AppState.currentState);
+  const { triggeredAlerts, checkAlerts, dismissAlert } = usePriceAlerts();
+  const checkAlertsRef = useRef(checkAlerts);
+  checkAlertsRef.current = checkAlerts;
+
+  useAutoRefresh(() => {
+    checkAlertsRef.current();
+  });
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
@@ -52,6 +62,7 @@ function RootLayoutInner() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
+      <AlertBanner alerts={triggeredAlerts} onDismiss={dismissAlert} />
       <Tabs
         screenOptions={{
           headerStyle: { backgroundColor: colors.tabBar },
