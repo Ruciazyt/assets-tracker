@@ -35,10 +35,13 @@ function buildInvestment(params: {
   sevenDayYield?: number;
   // fund
   fundCode?: string;
+  fundShare?: number;
   netValue?: number;
   purchaseCost?: number;
-  // cn-stock
+  // cn/hk-stock
   stockCode?: string;
+  stockShare?: number;
+  stockPurchasePrice?: number;
   // hk-stock
   purchaseCurrency?: string;
 }): Investment {
@@ -198,11 +201,14 @@ export default function AddInvestmentScreen() {
 
         // fund
         fundCode: fundCode.trim() || undefined,
+        fundShare: parseFloat(fundShare) || undefined,
         netValue: parseFloat(purchaseCost) || undefined,
         purchaseCost: parseFloat(purchaseCost) || undefined,
 
         // cn/hk stock
         stockCode: stockCode.trim() || undefined,
+        stockShare: parseFloat(stockShare) || undefined,
+        stockPurchasePrice: parseFloat(stockPurchasePrice) || undefined,
         purchaseCurrency,
       });
 
