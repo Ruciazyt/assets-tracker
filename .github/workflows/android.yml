@@ -27,13 +27,13 @@ jobs:
           echo "RUN_NUMBER=$RUN_NUM" >> $GITHUB_OUTPUT
           echo "TAG=v${VERSION}-build${RUN_NUM}" >> $GITHUB_OUTPUT
 
-      - name: Cache Expo prebuild
+      - name: Cache node_modules
         uses: actions/cache@v4
         with:
-          path: AssetsTrackerApp/android
-          key: assets-android-${{ runner.os }}-${{ hashFiles('AssetsTrackerApp/android/**/*') }}
+          path: AssetsTrackerApp/node_modules
+          key: assets-node-${{ runner.os }}-${{ hashFiles('AssetsTrackerApp/package-lock.json') }}
           restore-keys: |
-            assets-android-${{ runner.os }}-
+            assets-node-${{ runner.os }}-
 
       - name: Setup Android SDK
         run: |
@@ -45,12 +45,18 @@ jobs:
         run: cd AssetsTrackerApp && npm ci
 
       - name: Expo prebuild
-        run: cd AssetsTrackerApp && npx expo prebuild --platform android --clean
+        run: |
+          cd AssetsTrackerApp
+          rm -rf android
+          npx expo prebuild --platform android --clean
 
       - name: Build APK
         env:
           NODE_ENV: production
-        run: cd AssetsTrackerApp/android && ./gradlew assembleRelease --build-cache
+        run: |
+          cd AssetsTrackerApp/android
+          rm -rf ~/.gradle/caches/build-cache-*
+          ./gradlew assembleRelease --no-build-cache
 
       - name: Rename APK
         run: cp AssetsTrackerApp/android/app/build/outputs/apk/release/app-release.apk /tmp/assets-tracker-${{ steps.version.outputs.VERSION }}-build${{ steps.version.outputs.RUN_NUMBER }}.apk
