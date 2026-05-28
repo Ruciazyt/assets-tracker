@@ -6,6 +6,7 @@ import { Card, SegmentedButtons } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../src/context/ThemeContext';
+import { useAutoRefresh } from '../src/hooks/useAutoRefresh';
 
 export default function AssetsScreen() {
   const { colors } = useTheme();
@@ -18,7 +19,8 @@ export default function AssetsScreen() {
     setAssets(data ? JSON.parse(data) : []);
   };
 
-  useEffect(() => { loadAssets(); const interval = setInterval(loadAssets, 5000); return () => clearInterval(interval); }, []);
+  useEffect(() => { loadAssets(); }, []);
+  useAutoRefresh(loadAssets);
 
   const filteredAssets = assets.filter((a: any) => filter === 'all' || a.type === filter);
   const totalCash = assets.filter((a: any) => a.type === 'cash').reduce((sum: number, a: any) => sum + a.amount, 0);

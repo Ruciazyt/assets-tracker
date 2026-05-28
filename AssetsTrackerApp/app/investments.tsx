@@ -9,6 +9,7 @@ import Svg, { Rect, Line, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../src/context/ThemeContext';
 
 import { recalculateAllInvestments } from '../src/services/profitCalculator';
+import { useAutoRefresh } from '../src/hooks/useAutoRefresh';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CHART_HEIGHT = 180;
@@ -51,7 +52,8 @@ export default function InvestmentsScreen() {
     setInvestments(updated);
   };
 
-  useEffect(() => { loadData(); const interval = setInterval(loadData, 30000); return () => clearInterval(interval); }, []);
+  useEffect(() => { loadData(); }, []);
+  useAutoRefresh(loadData);
 
   const totalValue = investments.reduce((sum: number, i: any) => sum + i.amount, 0);
   const totalDailyPnl = investments.reduce((sum: number, i: any) => sum + (i.dailyPnl || 0), 0);

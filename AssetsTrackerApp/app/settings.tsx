@@ -9,9 +9,18 @@ import { useTheme } from '../src/context/ThemeContext';
 
 const currencies = ['CNY', 'USD', 'HKD', 'JPY', 'EUR', 'GBP'];
 
+const refreshOptions = [
+  { label: '关闭', value: 0 },
+  { label: '15秒', value: 15 },
+  { label: '30秒', value: 30 },
+  { label: '60秒', value: 60 },
+  { label: '5分钟', value: 300 },
+];
+
 export default function SettingsScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const [defaultCurrency, setDefaultCurrency] = useState('CNY');
+  const [refreshInterval, setRefreshInterval] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => { loadSettings(); }, []);
@@ -19,14 +28,29 @@ export default function SettingsScreen() {
   const loadSettings = async () => {
     try {
       const settings = await AsyncStorage.getItem('@assets_tracker/settings');
-      if (settings) setDefaultCurrency(JSON.parse(settings).defaultCurrency || 'CNY');
+      if (settings) {
+        const parsed = JSON.parse(settings);
+        setDefaultCurrency(parsed.defaultCurrency || 'CNY');
+        setRefreshInterval(Number(parsed.refreshInterval ?? 0));
+      }
     } catch (e) {}
   };
 
   const handleCurrencyChange = async (currency: string) => {
     setDefaultCurrency(currency);
-    await AsyncStorage.setItem('@assets_tracker/settings', JSON.stringify({ defaultCurrency: currency }));
+    const existing = await AsyncStorage.getItem('@assets_tracker/settings');
+    const updated = { ...JSON.parse(existing || '{}'), defaultCurrency: currency };
+    await AsyncStorage.setItem('@assets_tracker/settings', JSON.stringify(updated));
     Alert.alert('成功', `默认货币已设置为 ${currency}`);
+  };
+
+  const handleRefreshChange = async (value: number) => {
+    setRefreshInterval(value);
+    const existing = await AsyncStorage.getItem('@assets_tracker/settings');
+    const updated = { ...JSON.parse(existing || '{}'), refreshInterval: value };
+    await AsyncStorage.setItem('@assets_tracker/settings', JSON.stringify(updated));
+    const label = refreshOptions.find(o => o.value === value)?.label ?? String(value);
+    Alert.alert('成功', `自动刷新已设置为 ${label}`);
   };
 
   const handleExportData = async () => {
@@ -84,6 +108,36 @@ export default function SettingsScreen() {
               trackColor={{ false: '#6366f1', true: '#6366f1' }}
               thumbColor={isDark ? '#fff' : '#ccc'}
             />
+          </View>
+        </Card.Content>
+      </Card>
+
+      <Card style={[styles.card, { backgroundColor: colors.card }]}>
+        <Card.Content>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>数据自动刷新</Text>
+          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>设置数据自动刷新间隔</Text>
+          <View style={styles.refreshGrid}>
+            {refreshOptions.map(opt => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[
+                  styles.refreshBtn,
+                  { backgroundColor: colors.cardSecondary },
+                  refreshInterval === opt.value && { backgroundColor: colors.accent },
+                ]}
+                onPress={() => handleRefreshChange(opt.value)}
+              >
+                <Text
+                  style={[
+                    styles.refreshBtnText,
+                    { color: colors.textSecondary },
+                    refreshInterval === opt.value && { color: colors.accentText, fontWeight: '600' },
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </Card.Content>
       </Card>
@@ -149,6 +203,9 @@ const styles = StyleSheet.create({
   themeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderRadius: 8, borderWidth: 1, marginTop: 8 },
   themeLabel: { fontSize: 16, fontWeight: '600' },
   themeDesc: { fontSize: 12, marginTop: 2 },
+  refreshGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  refreshBtn: { paddingHorizontal: 14, paddingVertical: 12, borderRadius: 8, minWidth: 70, alignItems: 'center' },
+  refreshBtnText: { fontSize: 14 },
   currencyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   currencyBtn: { paddingHorizontal: 16, paddingVertical: 12, borderRadius: 8, minWidth: 70, alignItems: 'center' },
   currencyBtnText: { fontSize: 14 },
