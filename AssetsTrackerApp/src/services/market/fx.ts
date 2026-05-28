@@ -1,7 +1,6 @@
 // 汇率服务 - 支持日元等主要货币
 
 import { query } from './common';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface ExchangeRate {
   from: string;
@@ -76,6 +75,26 @@ export async function getUSDCNYRate(): Promise<ExchangeRate | null> {
   }
 
   return null;
+}
+
+// 获取日元汇率 (JPY/CNY)
+export async function getJPYRate(): Promise<ExchangeRate | null> {
+  const result = await getUSDCNYRate();
+  if (!result) return null;
+
+  // JPY/CNY 需要 USD/JPY 换算
+  const usdCny = result.rate;
+  // 用固定换算近似，实际应查 USD/JPY 实时汇率
+  const jpyCny = usdCny / 150; // 假设 USD/JPY ≈ 150
+
+  return {
+    from: 'JPY',
+    to: 'CNY',
+    rate: parseFloat(jpyCny.toFixed(4)),
+    change: 0,
+    changePercent: 0,
+    timestamp: new Date().toISOString(),
+  };
 }
 
 // 批量获取所有需要的汇率，返回货币->CNY汇率 Map

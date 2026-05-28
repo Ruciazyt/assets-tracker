@@ -11,7 +11,7 @@ const SETTINGS_KEY = '@assets_tracker/settings';
  * @param onRefresh  callback to invoke on each refresh
  * @returns          cleanup function for useEffect
  */
-export function useAutoRefresh(onRefresh: () => void): () => void {
+export function useAutoRefresh(onRefresh: () => void): void {
   const callbackRef = useRef(onRefresh);
   callbackRef.current = onRefresh;
 
