@@ -7,13 +7,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../src/context/ThemeContext';
 import { getGoldPrice } from '../src/services/market/gold';
 import { getJPYRate } from '../src/services/market/fx';
+import { useExchangeRates } from '../src/hooks/useExchangeRates';
 import { saveDailySnapshot } from '../src/services/historyService';
 
 export default function HomeScreen() {
   const { colors } = useTheme();
   const [goldPrice, setGoldPrice] = useState<any>(null);
   const [jpyRate, setJpyRate] = useState<any>(null);
-  const [summary, setSummary] = useState({ totalAssets: 0, totalInvestments: 0, totalValue: 0, dailyPnl: 0, totalPnl: 0 });
+  const { rateMap, defaultCurrency, loading: ratesLoading, convertToDefault } = useExchangeRates();
+  const [summary, setSummary] = useState({ totalAssets: 0, totalInvestments: 0, totalValue: 0, dailyPnl: 0, totalPnl: 0, totalValueConverted: 0 });
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -24,12 +26,12 @@ export default function HomeScreen() {
       ]);
       const assets = assetsStr ? JSON.parse(assetsStr) : [];
       const investments = investmentsStr ? JSON.parse(investmentsStr) : [];
-      const totalAssets = assets.reduce((sum: number, a: any) => sum + a.amount, 0);
-      const totalInvestments = investments.reduce((sum: number, i: any) => sum + i.amount, 0);
       const dailyPnl = investments.reduce((sum: number, i: any) => sum + (i.dailyPnl || 0), 0);
       const totalPnl = investments.reduce((sum: number, i: any) => sum + (i.totalPnl || 0), 0);
+      const totalAssets = assets.reduce((sum: number, a: any) => sum + convertToDefault(a.amount, a.currency || 'CNY'), 0);
+      const totalInvestments = investments.reduce((sum: number, i: any) => sum + convertToDefault(i.amount, i.currency || 'CNY'), 0);
       const totalValue = totalAssets + totalInvestments;
-      setSummary({ totalAssets, totalInvestments, totalValue, dailyPnl, totalPnl });
+      setSummary({ totalAssets, totalInvestments, totalValue, dailyPnl, totalPnl, totalValueConverted: totalValue });
 
       // Fetch market data in parallel (graceful failure)
       const [gold, jpy] = await Promise.allSettled([
@@ -68,6 +70,9 @@ export default function HomeScreen() {
       <Card style={[styles.card, styles.summaryCard, { backgroundColor: colors.accent }]}>
         <Text style={[styles.summaryLabel, { color: 'rgba(255,255,255,0.8)' }]}>总资产</Text>
         <Text style={styles.summaryAmount}>{formatCurrency(summary.totalValue)}</Text>
+        {defaultCurrency !== 'CNY' && !ratesLoading && (
+          <Text style={[styles.summaryConverted, { color: 'rgba(255,255,255,0.7)' }]}>≈ {formatCurrency(summary.totalValueConverted)} ({defaultCurrency})</Text>
+        )}
         <View style={styles.summaryRow}>
           <View><Text style={[styles.summaryItemLabel, { color: 'rgba(255,255,255,0.7)' }]}>流动资金</Text><Text style={styles.summaryItemValue}>{formatCurrency(summary.totalAssets)}</Text></View>
           <View><Text style={[styles.summaryItemLabel, { color: 'rgba(255,255,255,0.7)' }]}>理财产品</Text><Text style={styles.summaryItemValue}>{formatCurrency(summary.totalInvestments)}</Text></View>
@@ -104,6 +109,7 @@ const styles = StyleSheet.create({
   summaryItemLabel: { fontSize: 12 },
   summaryItemValue: { color: '#fff', fontSize: 16, fontWeight: '600', marginTop: 2 },
   cardTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  summaryConverted: { fontSize: 14, marginTop: 4 },
   pnlRow: { flexDirection: 'row', justifyContent: 'space-around' },
   pnlItem: { alignItems: 'center' },
   pnlLabel: { fontSize: 14 },

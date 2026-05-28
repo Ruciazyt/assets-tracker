@@ -1,6 +1,7 @@
 // 汇率服务 - 支持日元等主要货币
 
 import { query } from './common';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface ExchangeRate {
   from: string;
@@ -45,31 +46,25 @@ export async function getExchangeRate(from: string, to: string): Promise<Exchang
   return null;
 }
 
-// 获取日元汇率 (JPY/CNY)
-export async function getJPYRate(): Promise<ExchangeRate | null> {
-  // 东方财富使用 美元/人民币，然后换算日元
+// 获取美元/人民币汇率 (USD/CNY)
+export async function getUSDCNYRate(): Promise<ExchangeRate | null> {
   const result = await query(`美元兑人民币 USD/CNY 汇率 最新`);
-  
+
   if (!result.success || !result.data) return null;
-  
+
+
   const data = result.data as any;
   try {
     const tableList = data?.searchDataResultDTO?.dataTableDTOList || [];
     for (const table of tableList) {
       const rawTable = table.rawTable || {};
-      const f2 = rawTable.f2?.[0]; // USD/CNY rate
-      
+      const f2 = rawTable.f2?.[0];
+
       if (f2) {
-        const usdCny = parseFloat(f2);
-        // JPY/CNY = USD/CNY / USD/JPY
-        // 假设 USD/JPY ≈ 150
-        const usdJpy = 150;
-        const jpyCny = usdCny / usdJpy;
-        
         return {
-          from: 'JPY',
+          from: 'USD',
           to: 'CNY',
-          rate: parseFloat(jpyCny.toFixed(4)),
+          rate: parseFloat(f2),
           change: 0,
           changePercent: 0,
           timestamp: new Date().toISOString(),
@@ -77,8 +72,32 @@ export async function getJPYRate(): Promise<ExchangeRate | null> {
       }
     }
   } catch (e) {
-    console.error('JPY rate parse error:', e);
+    console.error('USD/CNY rate parse error:', e);
   }
-  
+
   return null;
+}
+
+// 批量获取所有需要的汇率，返回货币->CNY汇率 Map
+// rateMap[currency] = how many CNY per 1 unit of that currency
+export async function getExchangeRates(): Promise<Map<string, number>> {
+  const [usdResult, hkdResult, jpyResult] = await Promise.allSettled([
+    getUSDCNYRate(),
+    getExchangeRate('HKD', 'CNY'),
+    getJPYRate(),
+  ]);
+
+  const usdCny = usdResult.status === 'fulfilled' && usdResult.value ? usdResult.value.rate : 1;
+  const hkdCny = hkdResult.status === 'fulfilled' && hkdResult.value ? hkdResult.value.rate : usdCny / 7.8;
+  const jpyCny = jpyResult.status === 'fulfilled' && jpyResult.value ? jpyResult.value.rate : usdCny / 150;
+
+  // Rates expressed as: 1 unit of currency = X CNY
+  const rateMap = new Map<string, number>([
+    ['USD', usdCny],
+    ['HKD', hkdCny],
+    ['JPY', jpyCny],
+    ['CNY', 1],
+  ]);
+
+  return rateMap;
 }
