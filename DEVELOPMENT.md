@@ -38,7 +38,7 @@
 ### Phase 5: 体验优化 ✨ (进行中)
 - [x] 暗色/亮色主题切换
 - [x] 数据安全 (密码保护 - PIN)
-- [ ] 多语言支持
+- [x] 多语言支持 (CN/EN)
 - [ ] App 图标定制
 
 ---
@@ -59,13 +59,10 @@
 | 2026-05-29 (深夜2) | 多币种汇率换算（getUSDCNYRate + getExchangeRates + useExchangeRates hook）；首页总资产按默认货币折算显示 |
 | 2026-05-29 (凌晨) | PIN 密码保护（AuthContext + lock.tsx 全屏锁屏 + Settings 开关） |
 | 2026-05-29 (凌晨2) | 价格提醒系统（alertService + usePriceAlerts hook + AlertBanner 顶部横幅 + Settings 管理UI） |
+| 2026-05-29 (早晨) | i18n 多语言支持（CN/EN）：translations.ts + LanguageContext + t()翻译，8个页面全面接入 |
 
 ---
 
 ## 当前优先级
-1. ~~截图OCR导入页面~~ ✅ 2026-05-28
-2. ~~暗色/亮色主题切换~~ ✅ 2026-05-28
-3. ~~OCR识别引擎接入~~ ✅ 2026-05-30
-4. ~~多币种汇率换算~~ ✅ 2026-05-29
-5. ~~数据安全(PIN)~~ ✅ 2026-05-29
-6. ~~价格提醒/推送通知~~ ✅ 2026-05-29
+1. ~~全部已完成~~ ✅
+2. App 图标定制（待完成）
