@@ -63,6 +63,9 @@ export default function ImportScreen() {
       if (parsed?.amount) {
         setAmount(parsed.amount.toString());
       }
+      if (parsed?.name) {
+        setName(parsed.name);
+      }
     } catch (e) {
       Alert.alert('解析失败', '无法识别截图中的内容，请尝试手动输入');
     } finally {
