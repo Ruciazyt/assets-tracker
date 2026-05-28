@@ -1,0 +1,72 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: AssetsTrackerApp/package-lock.json
+
+      - name: Get version and run number
+        id: version
+        run: |
+          VERSION=$(node -p "require('./AssetsTrackerApp/package.json').version")
+          RUN_NUM=${{ github.run_number }}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "RUN_NUMBER=$RUN_NUM" >> $GITHUB_OUTPUT
+          echo "TAG=v${VERSION}-build${RUN_NUM}" >> $GITHUB_OUTPUT
+
+      - name: Cache Expo prebuild
+        uses: actions/cache@v4
+        with:
+          path: AssetsTrackerApp/android
+          key: assets-android-${{ runner.os }}-${{ hashFiles('AssetsTrackerApp/android/**/*') }}
+          restore-keys: |
+            assets-android-${{ runner.os }}-
+
+      - name: Setup Android SDK
+        run: |
+          echo "sdk.dir=/home/runner/work/_temp/android-sdk" >> AssetsTrackerApp/android/local.properties
+          mkdir -p /home/runner/work/_temp/android-sdk
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+
+      - name: Install dependencies
+        run: cd AssetsTrackerApp && npm ci
+
+      - name: Expo prebuild
+        run: cd AssetsTrackerApp && npx expo prebuild --platform android --clean
+
+      - name: Build APK
+        env:
+          NODE_ENV: production
+        run: cd AssetsTrackerApp/android && ./gradlew assembleRelease --build-cache
+
+      - name: Rename APK
+        run: cp AssetsTrackerApp/android/app/build/outputs/apk/release/app-release.apk /tmp/assets-tracker-${{ steps.version.outputs.VERSION }}-build${{ steps.version.outputs.RUN_NUMBER }}.apk
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.TAG }}
+          name: ${{ steps.version.outputs.TAG }}
+          body: |
+            Assets Tracker ${{ steps.version.outputs.VERSION }} (构建 #${{ steps.version.outputs.RUN_NUMBER }})
+            - 自动构建发布
+            - Commit: ${{ github.sha }}
+          draft: false
+          prerelease: false
+          files: |
+            /tmp/assets-tracker-${{ steps.version.outputs.VERSION }}-build${{ steps.version.outputs.RUN_NUMBER }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
