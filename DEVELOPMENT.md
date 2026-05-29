@@ -78,8 +78,11 @@
 
 | 2026-05-30 (深夜) | i18n完善: add-investment页硬编码修复 (brand/yesterday income/7-day yield/currency label); investments.tsx pnlChart标签修正 |
 | 2026-05-30 (凌晨2) | fix: getJPYRate 用实时 USD/JPY 查询替代硬编码 150；修复 gold cache key 使用固定 key 'gold:spot' 避免同一品种多个头寸缓存失效 |
+| 2026-05-30 (凌晨4) | fix: profitCalculator 所有子类(gold/股票/基金) dailyPnl 改用 inv.lastPrice（昨日收盘）而非 purchasePrice（买入价）；totalPnl 改为 currentPrice*quantity - cost |
 
 ## 已知问题 / TODO
 
 - [x] 历史收益趋势图表（Phase 4）— 折线图+三指标切换（资产值/累计收益/日收益）+颜色编码
 - [x] 收益图表交互增强（Phase 4）— 点击查看某日详情 ✅ 投资页柱状图点击显示tooltip ✅ 首页趋势图点击显示tooltip
+- [ ] PIN/密码本地加密存储（目前明文存储，AsyncStorage 无加密）
+- [ ] 港股持仓成本显示（purchaseCurrency 字段支持后，页面未展示购入货币）
