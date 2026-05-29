@@ -65,7 +65,7 @@
 | 2026-05-29 (凌晨2) | 价格提醒系统（alertService + usePriceAlerts hook + AlertBanner 顶部横幅 + Settings 管理UI） |
 | 2026-05-29 (早晨) | i18n 多语言支持（CN/EN）：translations.ts + LanguageContext + t()翻译，8个页面全面接入 |
 | 2026-05-29 (下午) | 趋势图表交互优化（点击数据点显示 Tooltip 高亮 + 边界检测） |
-| 2026-05-29 | App 图标定制（AI生成金融主题图标：icon.png + adaptive-icon.png + 启动屏 + 各尺寸Android mipmap） |
+| 2026-05-30 | App 图标自适应适配完成（PNG + WebP，双格式各密度覆盖）；自适应图标前景/背景分层；profitCalculator.ts 中 getUSDCNYRate 未使用已清理 |
 | 2026-05-29 | useAutoRefresh bugfix：每次tick重新读取refreshInterval，设置变更立即生效无需重启 |
 | 2026-05-30 (凌晨) | Phase 3 OCR 截图识别集成（MiniMax Vision API）；截图解析自动填入名称+金额 |
 | 2026-05-30 (早晨) | i18n Alert 对话框修复：assets/investments/add-asset/add-investment/lock 等页面硬编码文字替换为 t() 翻译 |
