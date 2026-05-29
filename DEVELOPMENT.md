@@ -70,3 +70,9 @@
 | 2026-05-30 (早晨) | i18n Alert 对话框修复：assets/investments/add-asset/add-investment/lock 等页面硬编码文字替换为 t() 翻译 |
 | 2026-05-30 (上午) | fix: getJPYRate 实时日元汇率（查询 USD/JPY 实时行情并动态计算 JPY/CNY，替代固定 150 估算）|
 | 2026-05-30 (中午) | feat: show current price + daily change % per investment item; i18n for add-asset labels |
+| 2026-05-30 (下午) | fix: dailyPnl 计算逻辑 bug — 之前用 purchasePrice 而非 lastPrice，导致"每日盈亏"实为"累计盈亏"；recalculateAndMerge 将 newLastPrice 写回 AsyncStorage 实现真正的日变化追踪 |
+
+## 已知问题 / TODO
+
+- [ ] 历史收益趋势图表（Phase 4）— 已集成 historyService，可绘制折线图但 UI 细节待打磨
+- [ ] 收益图表交互增强（Phase 4）— 点击查看某日详情、多标的切换
