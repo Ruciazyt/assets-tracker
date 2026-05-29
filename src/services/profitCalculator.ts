@@ -47,9 +47,8 @@ export async function recalculateInvestment(inv: Investment): Promise<Investment
   try {
     switch (inv.subtype) {
       case 'gold': {
-        // 黄金：当前价格 - 买入单价（每克）
         const currentPrice = await getCachedPrice(
-          `gold:${inv.purchasePrice}`,
+          'gold:spot',
           async () => {
             const gold = await getGoldPrice();
             return gold?.price ?? null;
