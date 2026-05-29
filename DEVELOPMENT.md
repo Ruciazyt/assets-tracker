@@ -64,6 +64,7 @@
 | 2026-05-29 (凌晨) | PIN 密码保护（AuthContext + lock.tsx 全屏锁屏 + Settings 开关） |
 | 2026-05-29 (凌晨2) | 价格提醒系统（alertService + usePriceAlerts hook + AlertBanner 顶部横幅 + Settings 管理UI） |
 | 2026-05-29 (早晨) | i18n 多语言支持（CN/EN）：translations.ts + LanguageContext + t()翻译，8个页面全面接入 |
+| 2026-05-29 (下午) | 趋势图表交互优化（点击数据点显示 Tooltip 高亮 + 边界检测） |
 | 2026-05-29 | App 图标定制（AI生成金融主题图标：icon.png + adaptive-icon.png + 启动屏 + 各尺寸Android mipmap） |
 | 2026-05-29 | useAutoRefresh bugfix：每次tick重新读取refreshInterval，设置变更立即生效无需重启 |
 | 2026-05-30 (凌晨) | Phase 3 OCR 截图识别集成（MiniMax Vision API）；截图解析自动填入名称+金额 |
