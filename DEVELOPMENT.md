@@ -76,7 +76,8 @@
 | 2026-05-30 | feat: 首页添加历史收益趋势折线图（7天/30天切换，react-native-svg Polyline 绘制） |
 | 2026-05-29 (晚) | feat: 趋势图指标切换（资产值/累计收益/日收益）；投资页柱状图点击显示tooltip（交互增强完成） |
 
-| 2026-05-30 (深夜) | i18n完善: add-investment页硬编码修复 (brand/yesterday income/7-day yield/currency label); investments.tsx pnlChart标签修正 |
+| 2026-05-30 (深夜) | i18n完善: add-investment页硬编码修复; assets.tsx汇总行+笔记显示+ i18n |
+| 2026-05-30 (凌晨2) | fix: getJPYRate 用实时 USD/JPY 查询替代硬编码 150；修复 gold cache key 避免缓存失效 |
 | 2026-05-30 (凌晨2) | fix: getJPYRate 用实时 USD/JPY 查询替代硬编码 150；修复 gold cache key 使用固定 key 'gold:spot' 避免同一品种多个头寸缓存失效 |
 | 2026-05-30 (凌晨4) | fix: profitCalculator 所有子类(gold/股票/基金) dailyPnl 改用 inv.lastPrice（昨日收盘）而非 purchasePrice（买入价）；totalPnl 改为 currentPrice*quantity - cost |
 
