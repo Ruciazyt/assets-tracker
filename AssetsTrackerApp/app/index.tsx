@@ -1,15 +1,104 @@
 // 首页 - 资产总览和当日盈亏
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { Card } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Svg, { Polyline, Circle, Text as SvgText } from 'react-native-svg';
 import { useTheme } from '../src/context/ThemeContext';
 import { useTranslation } from '../src/i18n/LanguageContext';
 import { getGoldPrice } from '../src/services/market/gold';
 import { getJPYRate } from '../src/services/market/fx';
 import { useExchangeRates } from '../src/hooks/useExchangeRates';
-import { saveDailySnapshot } from '../src/services/historyService';
+import { saveDailySnapshot, getHistory } from '../src/services/historyService';
+
+// 趋势图组件
+function TrendChart({ data, colors }: { data: any[]; colors: any }) {
+  const chartWidth = 300; // 可根据容器调整
+  const chartHeight = 160;
+  const leftPadding = 40;
+  const rightPadding = 16;
+  const topPadding = 16;
+  const bottomPadding = 24;
+
+  const values = data.map(d => d.totalValue);
+  const minVal = Math.min(...values);
+  const maxVal = Math.max(...values);
+  const range = maxVal - minVal || 1;
+
+  // 计算Y轴标签
+  const formatYLabel = (val: number) => {
+    if (val >= 10000) {
+      return (val / 10000).toFixed(1) + '万';
+    }
+    return val.toFixed(0);
+  };
+
+  // 生成Y轴标签值
+  const yLabels = [minVal, (minVal + maxVal) / 2, maxVal];
+
+  // 计算点位置
+  const graphWidth = chartWidth - leftPadding - rightPadding;
+  const graphHeight = chartHeight - topPadding - bottomPadding;
+  const points = data.map((d, i) => {
+    const x = leftPadding + (i / (data.length - 1)) * graphWidth;
+    const y = topPadding + graphHeight - ((d.totalValue - minVal) / range) * graphHeight;
+    return `${x},${y}`;
+  }).join(' ');
+
+  // X轴日期标签（MM-DD）
+  const xLabels = data.map((d, i) => {
+    if (data.length <= 7 || i === 0 || i === data.length - 1) {
+      return d.date.slice(5); // MM-DD
+    }
+    return '';
+  });
+
+  return (
+    <View>
+      <Svg width={chartWidth} height={chartHeight}>
+        {/* Y轴标签 */}
+        {yLabels.map((val, i) => {
+          const y = topPadding + graphHeight - (i / 2) * graphHeight;
+          return (
+            <React.Fragment key={i}>
+              <SvgText
+                x={leftPadding - 8}
+                y={y + 4}
+                fontSize={10}
+                fill={colors.textMuted}
+                textAnchor="end"
+              >
+                {formatYLabel(val)}
+              </SvgText>
+            </React.Fragment>
+          );
+        })}
+        {/* 折线 */}
+        <Polyline
+          points={points}
+          fill="none"
+          stroke={colors.accent}
+          strokeWidth={2}
+        />
+        {/* 数据点 */}
+        {data.map((d, i) => {
+          const x = leftPadding + (i / (data.length - 1)) * graphWidth;
+          const y = topPadding + graphHeight - ((d.totalValue - minVal) / range) * graphHeight;
+          return <Circle key={i} cx={x} cy={y} r={3} fill={colors.accent} />;
+        })}
+      </Svg>
+      {/* X轴日期标签 */}
+      <View style={[styles.xLabels, { paddingLeft: leftPadding, paddingRight: rightPadding }]}>
+        {data.map((d, i) => (
+          <Text key={i} style={[styles.xLabel, { color: colors.textMuted }]}>
+            {xLabels[i]}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   const { colors } = useTheme();
@@ -19,6 +108,8 @@ export default function HomeScreen() {
   const { rateMap, defaultCurrency, loading: ratesLoading, convertToDefault } = useExchangeRates();
   const [summary, setSummary] = useState({ totalAssets: 0, totalInvestments: 0, totalValue: 0, dailyPnl: 0, totalPnl: 0, totalValueConverted: 0 });
   const [refreshing, setRefreshing] = useState(false);
+  const [historyDays, setHistoryDays] = useState<7 | 30>(7);
+  const [historyData, setHistoryData] = useState<any[]>([]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -51,10 +142,14 @@ export default function HomeScreen() {
         totalDailyPnl: dailyPnl,
         totalPnl,
       });
+
+      // Load history data for trend chart
+      const history = await getHistory(historyDays);
+      setHistoryData(history);
     } catch (e) {
       console.error('Home fetchData error:', e);
     }
-  }, []);
+  }, [historyDays]);
 
   useEffect(() => {
     fetchData();
@@ -106,6 +201,32 @@ export default function HomeScreen() {
           </View>
         </View>
       </Card>
+
+      <Card style={[styles.card, { backgroundColor: colors.card }]}>
+        <View style={styles.trendHeader}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{t('home.trend') || '趋势'}</Text>
+          <View style={styles.trendTabs}>
+            <TouchableOpacity
+              style={[styles.trendTab, historyDays === 7 && { backgroundColor: colors.accent }]}
+              onPress={() => setHistoryDays(7)}
+            >
+              <Text style={[styles.trendTabText, historyDays === 7 && { color: '#fff' }]}>7天</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.trendTab, historyDays === 30 && { backgroundColor: colors.accent }]}
+              onPress={() => setHistoryDays(30)}
+            >
+              <Text style={[styles.trendTabText, historyDays === 30 && { color: '#fff' }]}>30天</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {historyData.length < 2 ? (
+          <Text style={[styles.noDataText, { color: colors.textMuted }]}>{t('home.noTrendData') || '暂无趋势数据'}</Text>
+        ) : (
+          <TrendChart data={historyData} colors={colors} />
+        )}
+      </Card>
     </ScrollView>
   );
 }
@@ -132,4 +253,11 @@ const styles = StyleSheet.create({
   quotePrice: { fontSize: 28, fontWeight: '700', marginTop: 4 },
   quoteUnit: { fontSize: 12 },
   quoteChange: { fontSize: 12, marginTop: 4 },
+  xLabels: { flexDirection: 'row', justifyContent: 'space-between' },
+  xLabel: { fontSize: 10, textAlign: 'center' },
+  trendHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  trendTabs: { flexDirection: 'row', gap: 8 },
+  trendTab: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  trendTabText: { fontSize: 13, fontWeight: '500' },
+  noDataText: { fontSize: 14, textAlign: 'center', paddingVertical: 32 },
 });
