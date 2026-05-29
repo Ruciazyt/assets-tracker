@@ -1,7 +1,7 @@
 // 首页 - 资产总览和当日盈亏
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, LayoutChangeEvent, ViewStyle } from 'react-native';
 import { Card } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Svg, { Polyline, Circle, Text as SvgText } from 'react-native-svg';
@@ -13,13 +13,35 @@ import { useExchangeRates } from '../src/hooks/useExchangeRates';
 import { saveDailySnapshot, getHistory } from '../src/services/historyService';
 
 // 趋势图组件
-function TrendChart({ data, colors }: { data: any[]; colors: any }) {
+interface TrendChartProps {
+  data: any[];
+  colors: any;
+}
+
+interface TooltipState {
+  visible: boolean;
+  x: number;
+  y: number;
+  date: string;
+  value: number;
+}
+
+function TrendChart({ data, colors }: TrendChartProps) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<View>(null);
+  const containerLayout = useRef({ x: 0, y: 0, width: 0, height: 0 });
+
   const chartWidth = 300; // 可根据容器调整
   const chartHeight = 160;
   const leftPadding = 40;
   const rightPadding = 16;
   const topPadding = 16;
   const bottomPadding = 24;
+  const tooltipOffset = 12; // tooltip与数据点的垂直间距
+  const tooltipArrowHeight = 6;
+  const tooltipWidth = 110;
+  const tooltipHeight = 52;
 
   const values = data.map(d => d.totalValue);
   const minVal = Math.min(...values);
@@ -40,11 +62,15 @@ function TrendChart({ data, colors }: { data: any[]; colors: any }) {
   // 计算点位置
   const graphWidth = chartWidth - leftPadding - rightPadding;
   const graphHeight = chartHeight - topPadding - bottomPadding;
-  const points = data.map((d, i) => {
+
+  // 计算每个点的精确坐标
+  const pointCoords = data.map((d, i) => {
     const x = leftPadding + (i / (data.length - 1)) * graphWidth;
     const y = topPadding + graphHeight - ((d.totalValue - minVal) / range) * graphHeight;
-    return `${x},${y}`;
-  }).join(' ');
+    return { x, y };
+  });
+
+  const points = pointCoords.map(p => `${p.x},${p.y}`).join(' ');
 
   // X轴日期标签（MM-DD）
   const xLabels = data.map((d, i) => {
@@ -54,40 +80,101 @@ function TrendChart({ data, colors }: { data: any[]; colors: any }) {
     return '';
   });
 
+  const handlePointPress = (index: number) => {
+    if (selectedIndex === index) {
+      setSelectedIndex(null);
+    } else {
+      setSelectedIndex(index);
+      setTooltipPos({ x: pointCoords[index].x, y: pointCoords[index].y });
+    }
+  };
+
+  // 计算tooltip位置，确保不超出边界
+  const getTooltipStyle = (): ViewStyle => {
+    let left = tooltipPos.x - tooltipWidth / 2;
+    // 水平边界检测
+    if (left < 0) left = 0;
+    if (left + tooltipWidth > chartWidth) left = chartWidth - tooltipWidth;
+
+    // tooltip在点上方，所以y坐标是点的y - tooltipHeight - tooltipOffset
+    const top = tooltipPos.y - tooltipHeight - tooltipOffset - tooltipArrowHeight;
+
+    return {
+      left,
+      top: Math.max(0, top),
+    };
+  };
+
+  const selectedData = selectedIndex !== null ? data[selectedIndex] : null;
+
   return (
-    <View>
-      <Svg width={chartWidth} height={chartHeight}>
-        {/* Y轴标签 */}
-        {yLabels.map((val, i) => {
-          const y = topPadding + graphHeight - (i / 2) * graphHeight;
-          return (
-            <React.Fragment key={i}>
-              <SvgText
-                x={leftPadding - 8}
-                y={y + 4}
-                fontSize={10}
-                fill={colors.textMuted}
-                textAnchor="end"
+    <View ref={containerRef}>
+      <View style={{ position: 'relative' }}>
+        <Svg width={chartWidth} height={chartHeight}>
+          {/* Y轴标签 */}
+          {yLabels.map((val, i) => {
+            const y = topPadding + graphHeight - (i / 2) * graphHeight;
+            return (
+              <React.Fragment key={i}>
+                <SvgText
+                  x={leftPadding - 8}
+                  y={y + 4}
+                  fontSize={10}
+                  fill={colors.textMuted}
+                  textAnchor="end"
+                >
+                  {formatYLabel(val)}
+                </SvgText>
+              </React.Fragment>
+            );
+          })}
+          {/* 折线 */}
+          <Polyline
+            points={points}
+            fill="none"
+            stroke={colors.accent}
+            strokeWidth={2}
+          />
+          {/* 数据点 */}
+          {pointCoords.map((coord, i) => {
+            const isSelected = selectedIndex === i;
+            return (
+              <TouchableOpacity
+                key={i}
+                activeOpacity={0.7}
+                onPress={() => handlePointPress(i)}
+                style={{ position: 'absolute', left: coord.x - 12, top: coord.y - 12, width: 24, height: 24, justifyContent: 'center', alignItems: 'center' }}
               >
-                {formatYLabel(val)}
-              </SvgText>
-            </React.Fragment>
-          );
-        })}
-        {/* 折线 */}
-        <Polyline
-          points={points}
-          fill="none"
-          stroke={colors.accent}
-          strokeWidth={2}
-        />
-        {/* 数据点 */}
-        {data.map((d, i) => {
-          const x = leftPadding + (i / (data.length - 1)) * graphWidth;
-          const y = topPadding + graphHeight - ((d.totalValue - minVal) / range) * graphHeight;
-          return <Circle key={i} cx={x} cy={y} r={3} fill={colors.accent} />;
-        })}
-      </Svg>
+                <Circle
+                  cx={12}
+                  cy={12}
+                  r={isSelected ? 8 : 4}
+                  fill={isSelected ? colors.accent : colors.cardSecondary}
+                  stroke={colors.accent}
+                  strokeWidth={isSelected ? 2 : 1.5}
+                />
+              </TouchableOpacity>
+            );
+          })}
+        </Svg>
+
+        {/* Tooltip */}
+        {selectedData && (
+          <View style={[styles.tooltipContainer, getTooltipStyle()]}>
+            <View style={[styles.tooltipContent, { backgroundColor: colors.text, borderColor: colors.accent }]}>
+              <Text style={[styles.tooltipDate, { color: colors.textMuted }]}>
+                {selectedData.date.slice(5)}
+              </Text>
+              <Text style={[styles.tooltipValue, { color: colors.accent }]}>
+                ¥{selectedData.totalValue.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </Text>
+            </View>
+            {/* 下方小三角指示器 */}
+            <View style={[styles.tooltipArrow, { borderTopColor: colors.text }]} />
+          </View>
+        )}
+      </View>
+
       {/* X轴日期标签 */}
       <View style={[styles.xLabels, { paddingLeft: leftPadding, paddingRight: rightPadding }]}>
         {data.map((d, i) => (
@@ -260,4 +347,35 @@ const styles = StyleSheet.create({
   trendTab: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
   trendTabText: { fontSize: 13, fontWeight: '500' },
   noDataText: { fontSize: 14, textAlign: 'center', paddingVertical: 32 },
+  tooltipContainer: {
+    position: 'absolute',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  tooltipContent: {
+    width: 110,
+    height: 52,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    justifyContent: 'center',
+  },
+  tooltipDate: {
+    fontSize: 10,
+    marginBottom: 2,
+  },
+  tooltipValue: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  tooltipArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+  },
 });
