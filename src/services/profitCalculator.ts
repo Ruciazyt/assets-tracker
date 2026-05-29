@@ -56,10 +56,11 @@ export async function recalculateInvestment(inv: Investment): Promise<Investment
         );
         if (currentPrice !== null) {
           update.newPrice = currentPrice;
-          const lastPrice = inv.purchasePrice; // 买入价/克
-          update.dailyPnl = (currentPrice - lastPrice) * inv.quantity;
+          // lastPrice = yesterday's close, dailyPnl = today's change
+          const lastPrice = inv.lastPrice;
+          update.dailyPnl = lastPrice > 0 ? (currentPrice - lastPrice) * inv.quantity : 0;
           update.dailyReturn = lastPrice > 0 ? ((currentPrice - lastPrice) / lastPrice) * 100 : 0;
-          update.totalPnl = inv.amount - inv.cost; // amount = currentPrice * quantity
+          update.totalPnl = currentPrice * inv.quantity - inv.cost;
         }
         break;
       }
@@ -74,10 +75,10 @@ export async function recalculateInvestment(inv: Investment): Promise<Investment
         );
         if (currentPrice !== null) {
           update.newPrice = currentPrice;
-          const lastPrice = inv.purchasePrice;
-          update.dailyPnl = (currentPrice - lastPrice) * inv.share;
+          const lastPrice = inv.lastPrice;
+          update.dailyPnl = lastPrice > 0 ? (currentPrice - lastPrice) * inv.share : 0;
           update.dailyReturn = lastPrice > 0 ? ((currentPrice - lastPrice) / lastPrice) * 100 : 0;
-          update.totalPnl = inv.amount - inv.cost;
+          update.totalPnl = currentPrice * inv.share - inv.cost;
         }
         break;
       }
@@ -93,10 +94,10 @@ export async function recalculateInvestment(inv: Investment): Promise<Investment
         );
         if (currentPrice !== null) {
           update.newPrice = currentPrice;
-          const lastPrice = inv.purchasePrice;
-          update.dailyPnl = (currentPrice - lastPrice) * inv.share;
+          const lastPrice = inv.lastPrice;
+          update.dailyPnl = lastPrice > 0 ? (currentPrice - lastPrice) * inv.share : 0;
           update.dailyReturn = lastPrice > 0 ? ((currentPrice - lastPrice) / lastPrice) * 100 : 0;
-          update.totalPnl = inv.amount - inv.cost;
+          update.totalPnl = currentPrice * inv.share - inv.cost;
         }
         break;
       }
@@ -111,10 +112,10 @@ export async function recalculateInvestment(inv: Investment): Promise<Investment
         );
         if (currentPrice !== null) {
           update.newPrice = currentPrice;
-          const lastPrice = inv.purchaseCost; // 买入时的净值
-          update.dailyPnl = (currentPrice - lastPrice) * inv.share;
+          const lastPrice = inv.lastPrice;
+          update.dailyPnl = lastPrice > 0 ? (currentPrice - lastPrice) * inv.share : 0;
           update.dailyReturn = lastPrice > 0 ? ((currentPrice - lastPrice) / lastPrice) * 100 : 0;
-          update.totalPnl = inv.amount - inv.cost;
+          update.totalPnl = currentPrice * inv.share - inv.cost;
         }
         break;
       }
