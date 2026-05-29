@@ -44,6 +44,8 @@ export const translations = {
     'home.market': '市场行情',
     'home.gold': '黄金现货',
     'home.jpy': '日元汇率',
+    'home.trend': '趋势',
+    'home.noTrendData': '暂无趋势数据',
     // Investments
     'investments.title': '投资',
     'investments.add': '添加投资',
@@ -53,6 +55,7 @@ export const translations = {
     'investments.addHint': '点击下方按钮添加理财产品',
     'investments.currentPrice': '当前价格',
     'investments.dailyChange': '今日涨跌',
+    'investments.pnlChart': '各产品盈亏',
     // Assets / Add Asset
     'assets.title': '资产',
     'addAsset.assetType': '资产类型',
@@ -96,6 +99,10 @@ export const translations = {
     'addInv.stockCode': '股票代码',
     'addInv.stockShare': '持有股数',
     'addInv.stockPrice': '买入价格',
+    'addInv.brand': '品牌 (可选)',
+    'addInv.yesterdayIncome': '昨日收益 (¥)',
+    'addInv.sevenDayYield': '7日年化收益率 (%)',
+    'addInv.currency': '货币',
     // Lock
     'lock.title': '已锁定',
     'lock.enterPin': '请输入 PIN',
@@ -144,6 +151,8 @@ export const translations = {
     'home.market': 'Market',
     'home.gold': 'Gold',
     'home.jpy': 'JPY Rate',
+    'home.trend': 'Trend',
+    'home.noTrendData': 'No trend data',
     // Investments
     'investments.title': 'Investments',
     'investments.add': 'Add Investment',
@@ -153,6 +162,7 @@ export const translations = {
     'investments.addHint': 'Tap + to add an investment',
     'investments.currentPrice': 'Current Price',
     'investments.dailyChange': 'Daily Change',
+    'investments.pnlChart': 'P&L by Product',
     // Assets / Add Asset
     'assets.title': 'Assets',
     'addAsset.assetType': 'Asset Type',
@@ -196,6 +206,10 @@ export const translations = {
     'addInv.stockCode': 'Stock Code',
     'addInv.stockShare': 'Shares',
     'addInv.stockPrice': 'Purchase Price',
+    'addInv.brand': 'Brand (optional)',
+    'addInv.yesterdayIncome': 'Yesterday income (¥)',
+    'addInv.sevenDayYield': '7-day yield (%)',
+    'addInv.currency': 'Currency',
     // Lock
     'lock.title': 'Locked',
     'lock.enterPin': 'Enter PIN',

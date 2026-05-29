@@ -209,7 +209,7 @@ export default function AddInvestmentScreen() {
               {makeInput(t('addInv.stockCode'), stockCode, setStockCode, 'e.g. 00700')}
               {makeInput(t('addInv.stockShare'), stockShare, setStockShare, 'e.g. 100', 'decimal-pad')}
               {makeInput(t('addInv.stockPrice') + ' (HKD)', stockPurchasePrice, setStockPurchasePrice, 'Purchase price', 'decimal-pad')}
-              <Text style={labelStyle}>Currency</Text>
+              <Text style={labelStyle}>{t('addInv.currency') || 'Currency'}</Text>
               <SegmentedButtons
                 value={purchaseCurrency}
                 onValueChange={v => setPurchaseCurrency(v as 'HKD' | 'CNY')}

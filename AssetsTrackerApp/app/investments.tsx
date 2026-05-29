@@ -110,7 +110,7 @@ export default function InvestmentsScreen() {
 
     return (
       <Card style={[styles.chartCard, { backgroundColor: colors.card }]}>
-        <Text style={[styles.chartTitle, { color: colors.text }]}>📊 {t('home.totalPnl')}</Text>
+        <Text style={[styles.chartTitle, { color: colors.text }]}>📊 {t('investments.pnlChart')}</Text>
         <View style={{ position: 'relative' }}>
           <Svg width={chartW} height={CHART_HEIGHT}>
             {/* Zero line */}
