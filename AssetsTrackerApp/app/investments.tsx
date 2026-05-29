@@ -30,17 +30,25 @@ export default function InvestmentsScreen() {
       for (const u of updates) {
         updateMap[u.id] = u;
       }
-      return data.map((inv: any) => {
+      const updated = data.map((inv: any) => {
         const u = updateMap[inv.id];
         if (!u) return inv;
-        return {
+        const result: any = {
           ...inv,
           newPrice: u.newPrice,
           dailyPnl: u.dailyPnl,
           dailyReturn: u.dailyReturn,
           totalPnl: u.totalPnl,
         };
+        // Persist lastPrice so next refresh uses it as "yesterday close"
+        if (u.newLastPrice > 0) {
+          result.lastPrice = u.newLastPrice;
+        }
+        return result;
       });
+      // Write updated lastPrice back to AsyncStorage
+      await AsyncStorage.setItem('@assets_tracker/investments', JSON.stringify(updated));
+      return updated;
     } catch (e) {
       console.error('[investments] recalculate error:', e);
       return data;
