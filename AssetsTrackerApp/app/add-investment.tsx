@@ -295,6 +295,7 @@ function buildInvestment(params: {
     case 'gold':
       return {
         ...base,
+        lastPrice: params.purchasePrice ?? 0,
         subtype: 'gold',
         productType: (params.productType as '实物金' | '纸黄金' | 'ETF基金') ?? '纸黄金',
         purchasePrice: params.purchasePrice ?? 0,
