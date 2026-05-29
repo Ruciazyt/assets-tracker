@@ -1,6 +1,7 @@
 export const translations = {
   CN: {
     // Common
+    'common.all': '全部',
     'common.save': '保存',
     'common.cancel': '取消',
     'common.delete': '删除',
@@ -77,6 +78,7 @@ export const translations = {
     'lock.enterPin': '请输入 PIN',
   },
   EN: {
+    'common.all': 'All',
     'common.save': 'Save',
     'common.cancel': 'Cancel',
     'common.delete': 'Delete',

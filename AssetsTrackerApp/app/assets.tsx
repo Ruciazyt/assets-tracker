@@ -55,7 +55,7 @@ export default function AssetsScreen() {
           value={filter}
           onValueChange={setFilter}
           buttons={[
-            { value: 'all', label: t('common.confirm') + ' ' },
+            { value: 'all', label: t('common.all') + ' ' },
             { value: 'cash', label: t('home.liquidAssets') },
             { value: 'fixed', label: t('assets.title') },
           ]}
