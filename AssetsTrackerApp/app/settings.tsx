@@ -103,16 +103,16 @@ export default function SettingsScreen() {
 
       const jsonStr = JSON.stringify(exportData, null, 2);
       await Clipboard.setStringAsync(jsonStr);
-      Alert.alert(t('common.success'), `Data copied to clipboard: ${assets ? JSON.parse(assets).length : 0} assets`);
+      Alert.alert(t('common.success'), t('settings.exportSuccess').replace('{n}', String(assets ? JSON.parse(assets).length : 0)));
     } catch (e) {
-      Alert.alert(t('common.error'), 'Failed to export data');
+      Alert.alert(t('common.error'), t('settings.exportFailed'));
     } finally {
       setIsExporting(false);
     }
   };
 
   const handleImportData = () => {
-    Alert.alert(t('import.title'), 'Not supported in current version');
+    Alert.alert(t('import.title'), t('settings.importUnsupported'));
   };
 
   const handleClearData = () => {
@@ -120,7 +120,7 @@ export default function SettingsScreen() {
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('common.delete'), style: 'destructive', onPress: async () => {
         await AsyncStorage.multiRemove(['@assets_tracker/assets', '@assets_tracker/investments']);
-        Alert.alert(t('common.success'), 'All data cleared');
+        Alert.alert(t('common.success'), t('settings.cleared'));
       }},
     ]);
   };
@@ -147,12 +147,12 @@ export default function SettingsScreen() {
 
   const handleSaveAlert = async () => {
     if (!alertInvSelect) {
-      Alert.alert(t('common.error'), 'Please select an investment');
+      Alert.alert(t('common.error'), t('settings.selectInvestment'));
       return;
     }
     const price = parseFloat(alertTargetPrice);
     if (isNaN(price) || price <= 0) {
-      Alert.alert(t('common.error'), 'Please enter a valid target price');
+      Alert.alert(t('common.error'), t('settings.enterValidPrice'));
       return;
     }
     const ruleData = {
@@ -228,13 +228,13 @@ export default function SettingsScreen() {
               style={[styles.langBtn, { backgroundColor: colors.cardSecondary }, lang === 'CN' && { backgroundColor: colors.accent }]}
               onPress={() => setLang('CN')}
             >
-              <Text style={[styles.langBtnText, { color: colors.textSecondary }, lang === 'CN' && { color: colors.accentText, fontWeight: '600' }]}>🇨🇳 中文</Text>
+              <Text style={[styles.langBtnText, { color: colors.textSecondary }, lang === 'CN' && { color: colors.accentText, fontWeight: '600' }]}>🇨🇳 {t('settings.langCN')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.langBtn, { backgroundColor: colors.cardSecondary }, lang === 'EN' && { backgroundColor: colors.accent }]}
               onPress={() => setLang('EN')}
             >
-              <Text style={[styles.langBtnText, { color: colors.textSecondary }, lang === 'EN' && { color: colors.accentText, fontWeight: '600' }]}>🇺🇸 English</Text>
+              <Text style={[styles.langBtnText, { color: colors.textSecondary }, lang === 'EN' && { color: colors.accentText, fontWeight: '600' }]}>🇺🇸 {t('settings.langEN')}</Text>
             </TouchableOpacity>
           </View>
         </Card.Content>
