@@ -45,7 +45,7 @@
 
 ## 当前优先级
 1. 所有主要功能已完成 ✅
-2. 可选优化：夜间模式细节打磨、收益图表交互增强
+2. 可选优化：UI细节打磨（已基本完成）
 
 ## 开发进度
 
@@ -73,8 +73,9 @@
 | 2026-05-30 (中午) | feat: show current price + daily change % per investment item; i18n for add-asset labels |
 | 2026-05-30 (下午) | fix: dailyPnl 计算逻辑 bug — 之前用 purchasePrice 而非 lastPrice，导致"每日盈亏"实为"累计盈亏"；recalculateAndMerge 将 newLastPrice 写回 AsyncStorage 实现真正的日变化追踪 |
 | 2026-05-30 | feat: 首页添加历史收益趋势折线图（7天/30天切换，react-native-svg Polyline 绘制） |
+| 2026-05-29 (晚) | feat: 趋势图指标切换（资产值/累计收益/日收益）；投资页柱状图点击显示tooltip（交互增强完成） |
 
 ## 已知问题 / TODO
 
-- [ ] 历史收益趋势图表（Phase 4）— 已集成 historyService，可绘制折线图但 UI 细节待打磨
-- [ ] 收益图表交互增强（Phase 4）— 点击查看某日详情、多标的切换
+- [x] 历史收益趋势图表（Phase 4）— 折线图+三指标切换（资产值/累计收益/日收益）+颜色编码
+- [x] 收益图表交互增强（Phase 4）— 点击查看某日详情 ✅ 投资页柱状图点击显示tooltip ✅ 首页趋势图点击显示tooltip
