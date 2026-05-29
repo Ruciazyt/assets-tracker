@@ -58,6 +58,9 @@ export const translations = {
     'investments.pnlChart': '各产品盈亏',
     // Assets / Add Asset
     'assets.title': '资产',
+    'assets.noData': '暂无资产',
+    'assets.addHint': '点击下方按钮添加资产',
+    'assets.amount': '金额',
     'addAsset.assetType': '资产类型',
     'addAsset.subtype': '子类型',
     'addAsset.name': '资产名称',

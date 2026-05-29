@@ -28,6 +28,8 @@ export default function AssetsScreen() {
   const totalCash = assets.filter((a: any) => a.type === 'cash').reduce((sum: number, a: any) => sum + a.amount, 0);
   const totalFixed = assets.filter((a: any) => a.type === 'fixed').reduce((sum: number, a: any) => sum + a.amount, 0);
 
+  const formatCurrency = (amount: number) => '¥' + amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 });
+
   const handleDelete = (id: string) => {
     Alert.alert(t('common.deleteConfirm'), t('common.deleteMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -41,8 +43,6 @@ export default function AssetsScreen() {
     ]);
   };
 
-  const formatCurrency = (amount: number) => '¥' + amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 });
-
   const getSubtypeLabel = (asset: any) => {
     const map: Record<string, string> = { cash: '现金', bank: '银行存款', alipay: '支付宝', wechat: '微信', property: '房产', vehicle: '车辆', equipment: '设备' };
     return map[asset.subtype] || asset.subtype;
@@ -50,14 +50,25 @@ export default function AssetsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.summaryRow, { backgroundColor: colors.tabBar }]}>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('addAsset.cash')}</Text>
+          <Text style={[styles.summaryValue, { color: colors.text }]}>{formatCurrency(totalCash)}</Text>
+        </View>
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{t('addAsset.fixed')}</Text>
+          <Text style={[styles.summaryValue, { color: colors.text }]}>{formatCurrency(totalFixed)}</Text>
+        </View>
+      </View>
+
       <View style={[styles.filterRow, { backgroundColor: colors.tabBar }]}>
         <SegmentedButtons
           value={filter}
           onValueChange={setFilter}
           buttons={[
             { value: 'all', label: t('common.all') + ' ' },
-            { value: 'cash', label: t('home.liquidAssets') },
-            { value: 'fixed', label: t('assets.title') },
+            { value: 'cash', label: t('addAsset.cash') },
+            { value: 'fixed', label: t('addAsset.fixed') },
           ]}
         />
       </View>
@@ -74,9 +85,19 @@ export default function AssetsScreen() {
               <Card.Content>
                 <View style={styles.assetHeader}>
                   <Text style={[styles.assetName, { color: colors.text }]}>{asset.name}</Text>
-                  <Text style={[styles.assetSubtype, { color: colors.textMuted }]}>{getSubtypeLabel(asset)}</Text>
+                  <Text style={[styles.assetSubtype, { color: colors.textMuted, backgroundColor: colors.cardSecondary }]}>{getSubtypeLabel(asset)}</Text>
                 </View>
-                <Text style={[styles.assetAmount, { color: colors.text }]}>{formatCurrency(asset.amount)}</Text>
+                <View style={styles.assetRow}>
+                  <View>
+                    <Text style={[styles.assetLabel, { color: colors.textSecondary }]}>金额</Text>
+                    <Text style={[styles.assetAmount, { color: colors.text }]}>{formatCurrency(asset.amount)}</Text>
+                  </View>
+                  {asset.note && (
+                    <View style={styles.assetNote}>
+                      <Text style={[styles.assetNoteText, { color: colors.textMuted }]} numberOfLines={1}>{asset.note}</Text>
+                    </View>
+                  )}
+                </View>
               </Card.Content>
             </Card>
           </TouchableOpacity>
@@ -84,7 +105,7 @@ export default function AssetsScreen() {
       </ScrollView>
 
       <TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent }]} onPress={() => router.push('/add-asset')}>
-        <Text style={[styles.addButtonText, { color: colors.accentText }]}>+ 添加资产</Text>
+        <Text style={[styles.addButtonText, { color: colors.accentText }]}>+ {t('assets.title')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -93,6 +114,10 @@ export default function AssetsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   filterRow: { padding: 16 },
+  summaryRow: { flexDirection: 'row', padding: 16 },
+  summaryItem: { flex: 1, alignItems: 'center' },
+  summaryLabel: { fontSize: 12 },
+  summaryValue: { fontSize: 20, fontWeight: '600', marginTop: 2 },
   list: { flex: 1 },
   listContent: { padding: 16 },
   emptyState: { alignItems: 'center', paddingVertical: 64 },
@@ -101,8 +126,12 @@ const styles = StyleSheet.create({
   assetCard: { borderRadius: 12, marginBottom: 8 },
   assetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   assetName: { fontSize: 16, fontWeight: '600' },
-  assetSubtype: { fontSize: 12 },
-  assetAmount: { fontSize: 20, fontWeight: '700', marginTop: 4 },
+  assetSubtype: { fontSize: 12, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' },
+  assetRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  assetLabel: { fontSize: 14 },
+  assetAmount: { fontSize: 16, fontWeight: '600' },
+  assetNote: { flex: 1, alignItems: 'flex-end', marginLeft: 12 },
+  assetNoteText: { fontSize: 13 },
   addButton: { position: 'absolute', bottom: 24, right: 24, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 },
   addButtonText: { fontSize: 16, fontWeight: '600' },
 });
