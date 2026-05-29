@@ -1,5 +1,5 @@
 // OCR截图解析 - 基于图片文字识别提取资产信息
-// 目前为预留接口，接入真实OCR服务后可扩展
+// 集成 MiniMax Vision API 进行真实截图 OCR
 
 import { query } from '../market/common.js';
 
@@ -8,20 +8,126 @@ export interface ParsedReceipt {
   amount?: number;
   currency?: string;
   date?: string;
+  name?: string;
   raw: string;
+}
+
+const MINIMAX_API_KEY = 'sk-cp-yMOekbdB5-trtxlICGNbvlMk9O4EpT25WKoz6w_NoTMFqZ2JFcK9Tpen76XzXUl1FZWVD16rJG9BxZ2VeelKJnvmLJ1wKXfBfVL7uC-_mKB-CX3C_i_soL4';
+const VISION_API_URL = 'https://api.minimax.chat/v1/vision/descriptions';
+
+/** 调用 MiniMax Vision API 解析截图
+ *  RN/Expo 中 file:// URI 可以直接被 fetch 读取，再用 FileReader 转 base64
+ */
+async function callMinimaxVision(imageUri: string): Promise<{ name?: string; amount?: number; type?: string; description?: string } | null> {
+  try {
+    const resp = await fetch(imageUri);
+    if (!resp.ok) {
+      console.error('[OCR] fetch image failed:', resp.status, imageUri);
+      return null;
+    }
+    const blob = await resp.blob();
+
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const b64 = (reader.result as string).split(',')[1];
+          if (!b64) { resolve(null); return; }
+          const result = await queryMinimaxVisionAPI(b64);
+          resolve(result);
+        } catch (e) {
+          console.error('[OCR] FileReader processing error:', e);
+          resolve(null);
+        }
+      };
+      reader.onerror = () => {
+        console.error('[OCR] FileReader error');
+        resolve(null);
+      };
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.error('[OCR] MiniMax Vision error:', e);
+  }
+  return null;
+}
+
+/** 查询 MiniMax Vision API */
+async function queryMinimaxVisionAPI(base64Data: string): Promise<{ name?: string; amount?: number; type?: string; description?: string } | null> {
+  const prompt = `You are a financial screenshot parser. Analyze this image and extract:
+1. Asset/product name (e.g. "纸黄金账户", "招商银行理财产品", "沪深300指数基金")
+2. Amount/balance in CNY (if visible, e.g. 12345.67)
+3. Asset type: "gold" for gold products, "fund" for funds, "bank" for bank products, "stock" for stocks, "cash" for cash/money market
+
+Respond ONLY in this JSON format (no extra text):
+{"name": "extracted name or empty string", "amount": 12345.67 or null, "type": "gold|fund|bank|stock|cash|other"}
+
+Focus on: account names, product names, monetary amounts, balance figures.`;
+
+  try {
+    const response = await fetch(VISION_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${MINIMAX_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'image-01',
+        image: base64Data,
+        prompt,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[OCR] Vision API HTTP error:', response.status, await response.text());
+      return null;
+    }
+
+    const json = await response.json();
+    // 支持多种响应格式
+    const text = json?.choices?.[0]?.text ?? json?.text ?? json?.content ?? '';
+
+    // Parse JSON from response text
+    const jsonMatch = String(text).match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          name: parsed.name || undefined,
+          amount: parsed.amount ? parseFloat(parsed.amount) : undefined,
+          type: parsed.type || undefined,
+          description: String(text).slice(0, 200),
+        };
+      } catch (e) {
+        console.error('[OCR] JSON parse error:', e);
+      }
+    }
+    return null;
+  } catch (e) {
+    console.error('[OCR] queryMinimaxVisionAPI error:', e);
+  }
+  return null;
 }
 
 /**
  * 解析截图中的资产信息
- * 策略：调用东方财富搜索API，通过文字搜索尝试识别截图对应的标的
- * @param imagePath 截图URI（RN中的本地文件路径）
+ * 使用 MiniMax Vision API 进行图片理解
+ * @param imageUri 截图URI（RN中的本地文件路径，file:// 或 assets-library://）
  */
-export async function parseScreenshot(imagePath: string): Promise<ParsedReceipt | null> {
-  // 预留扩展点：接入阿里云OCR/腾讯OCR等
-  // 目前实现：返回null，由用户手动输入
-  // TODO: 后续可使用视觉模型直接分析截图内容
-  console.log('[OCR] parseScreenshot called, image:', imagePath);
-  return null;
+export async function parseScreenshot(imageUri: string): Promise<ParsedReceipt | null> {
+  console.log('[OCR] parseScreenshot called, image:', imageUri);
+
+  const result = await callMinimaxVision(imageUri);
+  if (!result) return null;
+
+  return {
+    type: (result.type as ParsedReceipt['type']) || 'other',
+    name: result.name,
+    amount: result.amount,
+    currency: 'CNY',
+    date: new Date().toISOString().split('T')[0],
+    raw: result.description || JSON.stringify(result),
+  };
 }
 
 /**
