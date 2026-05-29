@@ -89,12 +89,14 @@ export default function InvestmentsScreen() {
     return map[inv.subtype] || inv.subtype;
   };
 
-  // Chart rendering
+  // Chart rendering with interactive tooltips
+  const [selectedBar, setSelectedBar] = useState<number | null>(null);
+
   const renderChart = () => {
     if (investments.length === 0) return null;
 
     const pnlData = investments
-      .map((inv: any) => ({ name: inv.name.slice(0, 4), pnl: inv.totalPnl || 0 }))
+      .map((inv: any, idx: number) => ({ name: inv.name.slice(0, 4), pnl: inv.totalPnl || 0, fullName: inv.name, idx }))
       .filter(d => d.pnl !== 0);
 
     if (pnlData.length === 0) return null;
@@ -103,60 +105,102 @@ export default function InvestmentsScreen() {
     const chartW = SCREEN_WIDTH - 64;
     const barW = Math.min(40, (chartW - CHART_PADDING * 2) / pnlData.length - 8);
     const zeroY = CHART_HEIGHT * 0.6;
+    const tooltipH = 52;
+    const tooltipArrowH = 6;
 
     return (
       <Card style={[styles.chartCard, { backgroundColor: colors.card }]}>
         <Text style={[styles.chartTitle, { color: colors.text }]}>📊 {t('home.totalPnl')}</Text>
-        <Svg width={chartW} height={CHART_HEIGHT}>
-          {/* Zero line */}
-          <Line x1={CHART_PADDING - 8} y1={zeroY} x2={chartW - 8} y2={zeroY} stroke={colors.border} strokeWidth={1} />
-          {/* Zero label */}
-          <SvgText
-            x={CHART_PADDING - 12}
-            y={zeroY + 4}
-            fontSize={10}
-            fill={colors.textMuted}
-            textAnchor="end"
-          >0</SvgText>
-          {pnlData.map((d: any, i: number) => {
-            const absH = maxAbs > 0 ? (Math.abs(d.pnl) / maxAbs) * (CHART_HEIGHT * 0.45) : 0;
-            const barX = CHART_PADDING + i * ((chartW - CHART_PADDING * 2) / pnlData.length) + (((chartW - CHART_PADDING * 2) / pnlData.length) - barW) / 2;
-            const barY = d.pnl >= 0 ? zeroY - absH : zeroY;
-            const barColor = d.pnl >= 0 ? colors.gain : colors.loss;
-            const labelY = d.pnl >= 0 ? zeroY + 12 : zeroY - absH - 4;
+        <View style={{ position: 'relative' }}>
+          <Svg width={chartW} height={CHART_HEIGHT}>
+            {/* Zero line */}
+            <Line x1={CHART_PADDING - 8} y1={zeroY} x2={chartW - 8} y2={zeroY} stroke={colors.border} strokeWidth={1} />
+            {/* Zero label */}
+            <SvgText
+              x={CHART_PADDING - 12}
+              y={zeroY + 4}
+              fontSize={10}
+              fill={colors.textMuted}
+              textAnchor="end"
+            >0</SvgText>
+            {pnlData.map((d: any, i: number) => {
+              const absH = maxAbs > 0 ? (Math.abs(d.pnl) / maxAbs) * (CHART_HEIGHT * 0.45) : 0;
+              const barCenterX = CHART_PADDING + i * ((chartW - CHART_PADDING * 2) / pnlData.length) + (((chartW - CHART_PADDING * 2) / pnlData.length)) / 2;
+              const barX = barCenterX - barW / 2;
+              const barY = d.pnl >= 0 ? zeroY - absH : zeroY;
+              const barColor = d.pnl >= 0 ? colors.gain : colors.loss;
+              const labelY = d.pnl >= 0 ? zeroY + 12 : zeroY - absH - 4;
+              const isSelected = selectedBar === i;
 
+              return (
+                <React.Fragment key={i}>
+                  {/* Invisible touch target on top of bar */}
+                  <Rect
+                    x={barX}
+                    y={0}
+                    width={barW}
+                    height={CHART_HEIGHT}
+                    fill="transparent"
+                    onPress={() => setSelectedBar(isSelected ? null : i)}
+                  />
+                  <Rect
+                    x={barX}
+                    y={barY}
+                    width={barW}
+                    height={absH}
+                    rx={4}
+                    fill={isSelected ? barColor : barColor + (isSelected ? '' : '99')}
+                    stroke={isSelected ? colors.text : 'transparent'}
+                    strokeWidth={isSelected ? 1.5 : 0}
+                  />
+                  <SvgText
+                    x={barCenterX}
+                    y={labelY}
+                    fontSize={9}
+                    fill={colors.textMuted}
+                    textAnchor="middle"
+                  >
+                    {d.pnl >= 0 ? '+' : ''}{d.pnl.toFixed(0)}
+                  </SvgText>
+                  <SvgText
+                    x={barCenterX}
+                    y={CHART_HEIGHT - 4}
+                    fontSize={9}
+                    fill={colors.textMuted}
+                    textAnchor="middle"
+                  >
+                    {d.name}
+                  </SvgText>
+                </React.Fragment>
+              );
+            })}
+          </Svg>
+
+          {/* Bar tooltip */}
+          {selectedBar !== null && (() => {
+            const d = pnlData[selectedBar];
+            const barCenterX = CHART_PADDING + selectedBar * ((chartW - CHART_PADDING * 2) / pnlData.length) + (((chartW - CHART_PADDING * 2) / pnlData.length)) / 2;
+            const absH = maxAbs > 0 ? (Math.abs(d.pnl) / maxAbs) * (CHART_HEIGHT * 0.45) : 0;
+            const barY = d.pnl >= 0 ? zeroY - absH : zeroY;
+            // Tooltip sits above the bar
+            const tooltipW = 120;
+            let tooltipX = barCenterX - tooltipW / 2;
+            if (tooltipX < 0) tooltipX = 0;
+            if (tooltipX + tooltipW > chartW) tooltipX = chartW - tooltipW;
+            const tooltipY = Math.max(0, barY - tooltipH - tooltipArrowH - 4);
             return (
-              <React.Fragment key={i}>
-                <Rect
-                  x={barX}
-                  y={barY}
-                  width={barW}
-                  height={absH}
-                  rx={4}
-                  fill={barColor}
-                />
-                <SvgText
-                  x={barX + barW / 2}
-                  y={labelY}
-                  fontSize={9}
-                  fill={colors.textMuted}
-                  textAnchor="middle"
-                >
-                  {d.pnl >= 0 ? '+' : ''}{d.pnl.toFixed(0)}
-                </SvgText>
-                <SvgText
-                  x={barX + barW / 2}
-                  y={CHART_HEIGHT - 4}
-                  fontSize={9}
-                  fill={colors.textMuted}
-                  textAnchor="middle"
-                >
-                  {d.name}
-                </SvgText>
-              </React.Fragment>
+              <View style={[styles.barTooltip, { left: tooltipX, top: tooltipY }]}>
+                <View style={[styles.barTooltipContent, { backgroundColor: colors.text, borderColor: d.pnl >= 0 ? colors.gain : colors.loss }]}>
+                  <Text style={[styles.barTooltipName, { color: colors.textMuted }]} numberOfLines={1}>{d.fullName}</Text>
+                  <Text style={[styles.barTooltipValue, { color: d.pnl >= 0 ? colors.gain : colors.loss }]}>
+                    {d.pnl >= 0 ? '+' : ''}{formatCurrency(d.pnl)}
+                  </Text>
+                </View>
+                <View style={[styles.barTooltipArrow, { borderTopColor: colors.text, left: barCenterX - tooltipX - 5 }]} />
+              </View>
             );
-          })}
-        </Svg>
+          })()}
+        </View>
       </Card>
     );
   };
@@ -244,4 +288,27 @@ const styles = StyleSheet.create({
   invPnl: { fontSize: 14, fontWeight: '500' },
   addButton: { position: 'absolute', bottom: 24, right: 24, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 },
   addButtonText: { fontSize: 16, fontWeight: '600' },
+  barTooltip: { position: 'absolute', width: 120, alignItems: 'center', zIndex: 10 },
+  barTooltipContent: {
+    width: 120,
+    height: 52,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    justifyContent: 'center',
+  },
+  barTooltipName: { fontSize: 10, marginBottom: 2 },
+  barTooltipValue: { fontSize: 13, fontWeight: '600' },
+  barTooltipArrow: {
+    position: 'absolute',
+    top: -6,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+  },
 });
