@@ -252,6 +252,22 @@ export default function InvestmentsScreen() {
                     </Text>
                   </View>
                 </View>
+                {inv.subtype === 'hk-stock' && (
+                  <View style={styles.invCostRow}>
+                    <View>
+                      <Text style={[styles.invLabel, { color: colors.textSecondary }]}>{t('investments.purchasePrice')}</Text>
+                      <Text style={[styles.invCostText, { color: colors.textMuted }]}>
+                        {formatCurrency(inv.purchasePrice)} {inv.purchaseCurrency || 'HKD'}
+                      </Text>
+                    </View>
+                    <View>
+                      <Text style={[styles.invLabel, { color: colors.textSecondary }]}>{t('investments.purchaseCurrency')}</Text>
+                      <View style={[styles.currencyBadge, { backgroundColor: colors.cardSecondary }]}>
+                        <Text style={[styles.currencyBadgeText, { color: colors.textMuted }]}>{inv.purchaseCurrency || 'HKD'}</Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
               </Card.Content>
             </Card>
           </TouchableOpacity>
@@ -311,4 +327,8 @@ const styles = StyleSheet.create({
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
   },
+  invCostRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6, paddingTop: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#ccc' },
+  invCostText: { fontSize: 13 },
+  currencyBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  currencyBadgeText: { fontSize: 12 },
 });

@@ -55,6 +55,8 @@ export const translations = {
     'investments.addHint': '点击下方按钮添加理财产品',
     'investments.currentPrice': '当前价格',
     'investments.dailyChange': '今日涨跌',
+    'investments.purchasePrice': '买入价格',
+    'investments.purchaseCurrency': '买入货币',
     'investments.pnlChart': '各产品盈亏',
     // Assets / Add Asset
     'assets.title': '资产',
@@ -164,6 +166,8 @@ export const translations = {
     'investments.addHint': 'Tap + to add an investment',
     'investments.currentPrice': 'Current Price',
     'investments.dailyChange': 'Daily Change',
+    'investments.purchasePrice': 'Purchase Price',
+    'investments.purchaseCurrency': 'Purchase Currency',
     'investments.pnlChart': 'P&L by Product',
     // Assets / Add Asset
     'assets.title': 'Assets',
