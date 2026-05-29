@@ -25,6 +25,7 @@ const CACHE_TTL_MS = 25 * 1000; // 缓存25秒，比刷新间隔30s略短
 export interface InvestmentUpdate {
   id: string;
   newPrice: number;
+  newLastPrice: number;
   dailyPnl: number;
   dailyReturn: number;
   totalPnl: number;
