@@ -68,3 +68,4 @@
 | 2026-05-29 | useAutoRefresh bugfix：每次tick重新读取refreshInterval，设置变更立即生效无需重启 |
 | 2026-05-30 (凌晨) | Phase 3 OCR 截图识别集成（MiniMax Vision API）；截图解析自动填入名称+金额 |
 | 2026-05-30 (早晨) | i18n Alert 对话框修复：assets/investments/add-asset/add-investment/lock 等页面硬编码文字替换为 t() 翻译 |
+| 2026-05-30 (上午) | fix: getJPYRate 实时日元汇率（查询 USD/JPY 实时行情并动态计算 JPY/CNY，替代固定 150 估算）|
