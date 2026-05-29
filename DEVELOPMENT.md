@@ -76,6 +76,8 @@
 | 2026-05-30 | feat: 首页添加历史收益趋势折线图（7天/30天切换，react-native-svg Polyline 绘制） |
 | 2026-05-29 (晚) | feat: 趋势图指标切换（资产值/累计收益/日收益）；投资页柱状图点击显示tooltip（交互增强完成） |
 
+| 2026-05-30 (深夜) | i18n完善: add-investment页硬编码修复 (brand/yesterday income/7-day yield/currency label); investments.tsx pnlChart标签修正 |
+
 ## 已知问题 / TODO
 
 - [x] 历史收益趋势图表（Phase 4）— 折线图+三指标切换（资产值/累计收益/日收益）+颜色编码
