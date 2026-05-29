@@ -79,13 +79,29 @@ export async function getUSDCNYRate(): Promise<ExchangeRate | null> {
 
 // 获取日元汇率 (JPY/CNY)
 export async function getJPYRate(): Promise<ExchangeRate | null> {
-  const result = await getUSDCNYRate();
-  if (!result) return null;
+  // 先查 USD/CNY
+  const usdCnyResult = await getUSDCNYRate();
+  if (!usdCnyResult) return null;
+  const usdCny = usdCnyResult.rate;
 
-  // JPY/CNY 需要 USD/JPY 换算
-  const usdCny = result.rate;
-  // 用固定换算近似，实际应查 USD/JPY 实时汇率
-  const jpyCny = usdCny / 150; // 假设 USD/JPY ≈ 150
+  // 再查 USD/JPY 实时汇率
+  const usdJpyResult = await query<any>(`美元兑日元 USD/JPY 汇率 最新`);
+  let usdJpy = 150; // 默认 fallback
+  if (usdJpyResult.success && usdJpyResult.data) {
+    const data = usdJpyResult.data as any;
+    const tableList = data?.searchDataResultDTO?.dataTableDTOList || [];
+    for (const table of tableList) {
+      const rawTable = table.rawTable || {};
+      const f2 = rawTable.f2?.[0];
+      if (f2) {
+        usdJpy = parseFloat(f2);
+        break;
+      }
+    }
+  }
+
+  // JPY/CNY = USD/CNY / USD/JPY
+  const jpyCny = usdJpy > 0 ? usdCny / usdJpy : usdCny / 150;
 
   return {
     from: 'JPY',
