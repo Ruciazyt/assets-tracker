@@ -5,11 +5,10 @@ const SETTINGS_KEY = '@assets_tracker/settings';
 
 /**
  * Hook that auto-refreshes data at a user-configured interval.
- * Reads refreshInterval from AsyncStorage on every tick so changes
+ * Re-reads refreshInterval from AsyncStorage on every tick so changes
  * take effect without restarting the component.
  *
  * @param onRefresh  callback to invoke on each refresh
- * @returns          cleanup function for useEffect
  */
 export function useAutoRefresh(onRefresh: () => void): void {
   const callbackRef = useRef(onRefresh);
@@ -25,8 +24,18 @@ export function useAutoRefresh(onRefresh: () => void): void {
         const intervalSec = Number(settings.refreshInterval ?? 0);
 
         if (intervalSec > 0) {
-          timerId = setInterval(() => {
-            callbackRef.current();
+          timerId = setInterval(async () => {
+            // Re-read interval on every tick so setting changes take effect immediately
+            try {
+              const currentRaw = await AsyncStorage.getItem(SETTINGS_KEY);
+              const currentSettings = currentRaw ? JSON.parse(currentRaw) : {};
+              const currentInterval = Number(currentSettings.refreshInterval ?? 0);
+              if (currentInterval > 0) {
+                callbackRef.current();
+              }
+            } catch (e) {
+              console.error('[useAutoRefresh] tick error:', e);
+            }
           }, intervalSec * 1000);
         }
       } catch (e) {
