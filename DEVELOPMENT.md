@@ -72,6 +72,7 @@
 | 2026-05-30 (上午) | fix: getJPYRate 实时日元汇率（查询 USD/JPY 实时行情并动态计算 JPY/CNY，替代固定 150 估算）|
 | 2026-05-30 (中午) | feat: show current price + daily change % per investment item; i18n for add-asset labels |
 | 2026-05-30 (下午) | fix: dailyPnl 计算逻辑 bug — 之前用 purchasePrice 而非 lastPrice，导致"每日盈亏"实为"累计盈亏"；recalculateAndMerge 将 newLastPrice 写回 AsyncStorage 实现真正的日变化追踪 |
+| 2026-05-30 (晚) | 代码审查确认：profitCalculator.ts 逻辑正确（lastPrice 作为昨日收盘，每日对比）；TypeScript 编译通过；仓库干净 |
 | 2026-05-30 | feat: 首页添加历史收益趋势折线图（7天/30天切换，react-native-svg Polyline 绘制） |
 | 2026-05-29 (晚) | feat: 趋势图指标切换（资产值/累计收益/日收益）；投资页柱状图点击显示tooltip（交互增强完成） |
 
