@@ -184,8 +184,14 @@ export default function InvestmentsScreen() {
                 </View>
                 <View style={styles.invRow}>
                   <View>
-                    <Text style={[styles.invLabel, { color: colors.textSecondary }]}>当前市值</Text>
-                    <Text style={[styles.invAmount, { color: colors.text }]}>{formatCurrency(inv.amount)}</Text>
+                    <Text style={[styles.invLabel, { color: colors.textSecondary }]}>{t('investments.currentPrice')}</Text>
+                    <Text style={[styles.invAmount, { color: colors.text }]}>{formatCurrency(inv.newPrice)}</Text>
+                  </View>
+                  <View>
+                    <Text style={[styles.invLabel, { color: colors.textSecondary }]}>{t('investments.dailyChange')}</Text>
+                    <Text style={[styles.invPnl, { color: (inv.dailyReturn || 0) >= 0 ? colors.gain : colors.loss }]}>
+                      {formatPercent(inv.dailyReturn || 0)}
+                    </Text>
                   </View>
                   <View>
                     <Text style={[styles.invLabel, { color: colors.textSecondary }]}>{t('investments.totalPnl')}</Text>

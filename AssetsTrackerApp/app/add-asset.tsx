@@ -48,21 +48,21 @@ export default function AddAssetScreen() {
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <Card.Content>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>资产类型</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addAsset.assetType')}</Text>
           <SegmentedButtons
             value={type}
             onValueChange={(val) => { setType(val as 'cash' | 'fixed'); setSubtype(val === 'cash' ? 'bank' : 'property'); }}
-            buttons={[{ value: 'cash', label: '流动资金' }, { value: 'fixed', label: '固定资产' }]}
+            buttons={[{ value: 'cash', label: t('addAsset.cash') }, { value: 'fixed', label: t('addAsset.fixed') }]}
             style={styles.segmented}
           />
-          <Text style={[styles.label, { color: colors.textSecondary }]}>子类型</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addAsset.subtype')}</Text>
           <SegmentedButtons
             value={subtype}
             onValueChange={setSubtype}
             buttons={subtypes.map(s => ({ value: s.value, label: s.label }))}
             style={styles.segmented}
           />
-          <Text style={[styles.label, { color: colors.textSecondary }]}>资产名称</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addAsset.name')}</Text>
           <TextInput
             value={name}
             onChangeText={setName}
@@ -74,7 +74,7 @@ export default function AddAssetScreen() {
             activeOutlineColor={colors.accent}
             textColor={colors.text}
           />
-          <Text style={[styles.label, { color: colors.textSecondary }]}>备注 (可选)</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addAsset.note')}</Text>
           <TextInput
             value={note}
             onChangeText={setNote}
@@ -88,7 +88,7 @@ export default function AddAssetScreen() {
             multiline
             numberOfLines={2}
           />
-          <Text style={[styles.label, { color: colors.textSecondary }]}>金额 (CNY)</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addAsset.amount')}</Text>
           <TextInput
             value={amount}
             onChangeText={setAmount}
@@ -109,7 +109,7 @@ export default function AddAssetScreen() {
         style={[styles.saveBtn, { backgroundColor: colors.accent }]}
         buttonColor={colors.accent}
         textColor={colors.accentText}
-      >保存</Button>
+      >{t('common.save')}</Button>
     </ScrollView>
   );
 }
