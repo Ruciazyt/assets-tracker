@@ -78,9 +78,9 @@ export default function AddInvestmentScreen() {
   );
 
   const handleSave = async () => {
-    if (!name.trim()) { Alert.alert(t('common.error'), 'Please enter product name'); return; }
-    if (!amount || parseFloat(amount) <= 0) { Alert.alert(t('common.error'), 'Please enter current value'); return; }
-    if (!cost || parseFloat(cost) <= 0) { Alert.alert(t('common.error'), 'Please enter total cost'); return; }
+    if (!name.trim()) { Alert.alert(t('common.error'), t('common.errNameReq')); return; }
+    if (!amount || parseFloat(amount) <= 0) { Alert.alert(t('common.error'), t('common.errAmountReq')); return; }
+    if (!cost || parseFloat(cost) <= 0) { Alert.alert(t('common.error'), t('common.errCostReq')); return; }
 
     const a = parseFloat(amount);
     const c = parseFloat(cost);
@@ -124,7 +124,7 @@ export default function AddInvestmentScreen() {
       await AsyncStorage.setItem('@assets_tracker/investments', JSON.stringify(investments));
       router.back();
     } catch (e) {
-      Alert.alert(t('common.error'), 'Save failed: ' + String(e));
+      Alert.alert(t('common.error'), t('common.errSave') + String(e));
     }
   };
 

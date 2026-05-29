@@ -72,7 +72,7 @@ export default function LockScreen() {
           if (verifyPin(digits)) {
             setPin('');
           } else {
-            showError('PIN 错误，请重试');
+            showError(t('common.error') + ': PIN');
           }
         }
       }

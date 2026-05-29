@@ -61,9 +61,9 @@ export default function InvestmentsScreen() {
   const totalDailyPnl = investments.reduce((sum: number, i: any) => sum + (i.dailyPnl || 0), 0);
 
   const handleDelete = (id: string) => {
-    Alert.alert('确认删除', '确定要删除这笔投资吗？', [
-      { text: '取消', style: 'cancel' },
-      { text: '删除', style: 'destructive', onPress: async () => {
+    Alert.alert(t('common.deleteConfirm'), t('common.deleteMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: async () => {
         const data = await AsyncStorage.getItem('@assets_tracker/investments');
         const arr = data ? JSON.parse(data) : [];
         const filtered = arr.filter((i: any) => i.id !== id);

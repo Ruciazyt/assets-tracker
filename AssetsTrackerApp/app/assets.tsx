@@ -29,9 +29,9 @@ export default function AssetsScreen() {
   const totalFixed = assets.filter((a: any) => a.type === 'fixed').reduce((sum: number, a: any) => sum + a.amount, 0);
 
   const handleDelete = (id: string) => {
-    Alert.alert('确认删除', '确定要删除这笔资产吗？', [
-      { text: '取消', style: 'cancel' },
-      { text: '删除', style: 'destructive', onPress: async () => {
+    Alert.alert(t('common.deleteConfirm'), t('common.deleteMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: async () => {
         const data = await AsyncStorage.getItem('@assets_tracker/assets');
         const arr = data ? JSON.parse(data) : [];
         const filtered = arr.filter((a: any) => a.id !== id);

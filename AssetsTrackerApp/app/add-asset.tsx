@@ -6,12 +6,14 @@ import { TextInput, Button, SegmentedButtons, Card } from 'react-native-paper';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../src/context/ThemeContext';
+import { useTranslation } from '../src/i18n/LanguageContext';
 
 const cashSubtypes = [{ value: 'cash', label: '现金' }, { value: 'bank', label: '银行' }, { value: 'alipay', label: '支付宝' }, { value: 'wechat', label: '微信' }];
 const fixedSubtypes = [{ value: 'property', label: '房产' }, { value: 'vehicle', label: '车辆' }, { value: 'equipment', label: '设备' }];
 
 export default function AddAssetScreen() {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [type, setType] = useState<'cash' | 'fixed'>('cash');
   const [subtype, setSubtype] = useState('bank');
   const [name, setName] = useState('');
@@ -21,8 +23,8 @@ export default function AddAssetScreen() {
   const subtypes = type === 'cash' ? cashSubtypes : fixedSubtypes;
 
   const handleSave = async () => {
-    if (!name.trim()) { Alert.alert('错误', '请输入资产名称'); return; }
-    if (!amount || parseFloat(amount) <= 0) { Alert.alert('错误', '请输入有效金额'); return; }
+    if (!name.trim()) { Alert.alert(t('common.error'), t('common.errName')); return; }
+    if (!amount || parseFloat(amount) <= 0) { Alert.alert(t('common.error'), t('common.errAmount')); return; }
 
     const asset = {
       id: Date.now().toString(),
