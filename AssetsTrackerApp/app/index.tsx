@@ -13,9 +13,12 @@ import { useExchangeRates } from '../src/hooks/useExchangeRates';
 import { saveDailySnapshot, getHistory } from '../src/services/historyService';
 
 // 趋势图组件
+type TrendMetric = 'totalValue' | 'totalPnl' | 'totalDailyPnl';
+
 interface TrendChartProps {
   data: any[];
   colors: any;
+  metric: TrendMetric;
 }
 
 interface TooltipState {
@@ -26,7 +29,7 @@ interface TooltipState {
   value: number;
 }
 
-function TrendChart({ data, colors }: TrendChartProps) {
+function TrendChart({ data, colors, metric }: TrendChartProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<View>(null);
@@ -43,17 +46,35 @@ function TrendChart({ data, colors }: TrendChartProps) {
   const tooltipWidth = 110;
   const tooltipHeight = 52;
 
-  const values = data.map(d => d.totalValue);
+  const values = data.map(d => d[metric]);
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
   const range = maxVal - minVal || 1;
 
+  const isPnl = metric !== 'totalValue';
+
   // 计算Y轴标签
   const formatYLabel = (val: number) => {
+    if (isPnl) {
+      const sign = val >= 0 ? '+' : '';
+      if (Math.abs(val) >= 10000) {
+        return sign + (val / 10000).toFixed(1) + '万';
+      }
+      return sign + val.toFixed(0);
+    }
     if (val >= 10000) {
       return (val / 10000).toFixed(1) + '万';
     }
     return val.toFixed(0);
+  };
+
+  // 图表标题
+  const chartTitle = metric === 'totalValue' ? '资产值' : metric === 'totalPnl' ? '累计收益' : '日收益';
+
+  // Y轴标签颜色
+  const yLabelColor = (val: number) => {
+    if (!isPnl) return colors.textMuted;
+    return val >= 0 ? colors.gain : colors.loss;
   };
 
   // 生成Y轴标签值
@@ -66,11 +87,14 @@ function TrendChart({ data, colors }: TrendChartProps) {
   // 计算每个点的精确坐标
   const pointCoords = data.map((d, i) => {
     const x = leftPadding + (i / (data.length - 1)) * graphWidth;
-    const y = topPadding + graphHeight - ((d.totalValue - minVal) / range) * graphHeight;
+    const y = topPadding + graphHeight - ((d[metric] - minVal) / range) * graphHeight;
     return { x, y };
   });
 
   const points = pointCoords.map(p => `${p.x},${p.y}`).join(' ');
+
+  // 折线颜色
+  const lineColor = isPnl ? (data[data.length - 1]?.[metric] >= 0 ? colors.gain : colors.loss) : colors.accent;
 
   // X轴日期标签（MM-DD）
   const xLabels = data.map((d, i) => {
@@ -107,6 +131,12 @@ function TrendChart({ data, colors }: TrendChartProps) {
 
   const selectedData = selectedIndex !== null ? data[selectedIndex] : null;
 
+  // Tooltip值格式化
+  const formatTooltipValue = (val: number) => {
+    const sign = val >= 0 ? '+' : '';
+    return '¥' + sign + val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   return (
     <View ref={containerRef}>
       <View style={{ position: 'relative' }}>
@@ -120,7 +150,7 @@ function TrendChart({ data, colors }: TrendChartProps) {
                   x={leftPadding - 8}
                   y={y + 4}
                   fontSize={10}
-                  fill={colors.textMuted}
+                  fill={yLabelColor(val)}
                   textAnchor="end"
                 >
                   {formatYLabel(val)}
@@ -132,12 +162,14 @@ function TrendChart({ data, colors }: TrendChartProps) {
           <Polyline
             points={points}
             fill="none"
-            stroke={colors.accent}
+            stroke={lineColor}
             strokeWidth={2}
           />
           {/* 数据点 */}
           {pointCoords.map((coord, i) => {
             const isSelected = selectedIndex === i;
+            const pointValue = data[i][metric];
+            const pointColor = isPnl ? (pointValue >= 0 ? colors.gain : colors.loss) : colors.accent;
             return (
               <TouchableOpacity
                 key={i}
@@ -149,8 +181,8 @@ function TrendChart({ data, colors }: TrendChartProps) {
                   cx={12}
                   cy={12}
                   r={isSelected ? 8 : 4}
-                  fill={isSelected ? colors.accent : colors.cardSecondary}
-                  stroke={colors.accent}
+                  fill={isSelected ? pointColor : colors.cardSecondary}
+                  stroke={pointColor}
                   strokeWidth={isSelected ? 2 : 1.5}
                 />
               </TouchableOpacity>
@@ -161,12 +193,12 @@ function TrendChart({ data, colors }: TrendChartProps) {
         {/* Tooltip */}
         {selectedData && (
           <View style={[styles.tooltipContainer, getTooltipStyle()]}>
-            <View style={[styles.tooltipContent, { backgroundColor: colors.text, borderColor: colors.accent }]}>
+            <View style={[styles.tooltipContent, { backgroundColor: colors.text, borderColor: lineColor }]}>
               <Text style={[styles.tooltipDate, { color: colors.textMuted }]}>
                 {selectedData.date.slice(5)}
               </Text>
-              <Text style={[styles.tooltipValue, { color: colors.accent }]}>
-                ¥{selectedData.totalValue.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <Text style={[styles.tooltipValue, { color: lineColor }]}>
+                {formatTooltipValue(selectedData[metric])}
               </Text>
             </View>
             {/* 下方小三角指示器 */}
@@ -197,6 +229,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [historyDays, setHistoryDays] = useState<7 | 30>(7);
   const [historyData, setHistoryData] = useState<any[]>([]);
+  const [trendMetric, setTrendMetric] = useState<TrendMetric>('totalValue');
 
   const fetchData = useCallback(async () => {
     try {
@@ -292,26 +325,45 @@ export default function HomeScreen() {
       <Card style={[styles.card, { backgroundColor: colors.card }]}>
         <View style={styles.trendHeader}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>{t('home.trend') || '趋势'}</Text>
-          <View style={styles.trendTabs}>
-            <TouchableOpacity
-              style={[styles.trendTab, historyDays === 7 && { backgroundColor: colors.accent }]}
-              onPress={() => setHistoryDays(7)}
-            >
-              <Text style={[styles.trendTabText, historyDays === 7 && { color: '#fff' }]}>7天</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.trendTab, historyDays === 30 && { backgroundColor: colors.accent }]}
-              onPress={() => setHistoryDays(30)}
-            >
-              <Text style={[styles.trendTabText, historyDays === 30 && { color: '#fff' }]}>30天</Text>
-            </TouchableOpacity>
-          </View>
+        </View>
+
+        {/* 时间区间切换：7天 / 30天 */}
+        <View style={styles.trendTabsRow}>
+          <TouchableOpacity
+            style={[styles.trendTab, historyDays === 7 && { backgroundColor: colors.accent }]}
+            onPress={() => setHistoryDays(7)}
+          >
+            <Text style={[styles.trendTabText, historyDays === 7 && { color: '#fff' }]}>7天</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.trendTab, historyDays === 30 && { backgroundColor: colors.accent }]}
+            onPress={() => setHistoryDays(30)}
+          >
+            <Text style={[styles.trendTabText, historyDays === 30 && { color: '#fff' }]}>30天</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 指标切换：资产值 / 累计收益 / 日收益 */}
+        <View style={[styles.trendTabsRow, styles.metricTabsRow]}>
+          {(['totalValue', 'totalPnl', 'totalDailyPnl'] as TrendMetric[]).map(m => {
+            const label = m === 'totalValue' ? '资产值' : m === 'totalPnl' ? '累计收益' : '日收益';
+            const isSelected = trendMetric === m;
+            return (
+              <TouchableOpacity
+                key={m}
+                style={[styles.trendTab, styles.metricTab, isSelected && { backgroundColor: colors.cardSecondary, borderColor: colors.accent }]}
+                onPress={() => setTrendMetric(m)}
+              >
+                <Text style={[styles.trendTabText, isSelected && { color: colors.accent, fontWeight: '600' }]}>{label}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {historyData.length < 2 ? (
           <Text style={[styles.noDataText, { color: colors.textMuted }]}>{t('home.noTrendData') || '暂无趋势数据'}</Text>
         ) : (
-          <TrendChart data={historyData} colors={colors} />
+          <TrendChart data={historyData} colors={colors} metric={trendMetric} />
         )}
       </Card>
     </ScrollView>
@@ -343,8 +395,10 @@ const styles = StyleSheet.create({
   xLabels: { flexDirection: 'row', justifyContent: 'space-between' },
   xLabel: { fontSize: 10, textAlign: 'center' },
   trendHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  trendTabs: { flexDirection: 'row', gap: 8 },
+  trendTabsRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  metricTabsRow: { marginBottom: 4 },
   trendTab: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  metricTab: { paddingHorizontal: 10, paddingVertical: 3 },
   trendTabText: { fontSize: 13, fontWeight: '500' },
   noDataText: { fontSize: 14, textAlign: 'center', paddingVertical: 32 },
   tooltipContainer: {
