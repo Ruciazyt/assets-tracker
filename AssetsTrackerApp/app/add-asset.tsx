@@ -1,19 +1,30 @@
-// 添加资产页面
+// 添加资产页面 — Apple 风格表单
 
 import { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
-import { TextInput, Button, SegmentedButtons, Card } from 'react-native-paper';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../src/context/ThemeContext';
-import { useTranslation } from '../src/i18n/LanguageContext';
+import { useAppTheme } from '../src/theme/ThemeProvider';
+import AppleCard from '../src/components/AppleCard';
+import AppleButton from '../src/components/AppleButton';
+import AppleTextInput from '../src/components/AppleTextInput';
+import SegmentedControl from '../src/components/SegmentedControl';
+import SectionHeader from '../src/components/SectionHeader';
 
-const cashSubtypes = [{ value: 'cash', label: '现金' }, { value: 'bank', label: '银行' }, { value: 'alipay', label: '支付宝' }, { value: 'wechat', label: '微信' }];
-const fixedSubtypes = [{ value: 'property', label: '房产' }, { value: 'vehicle', label: '车辆' }, { value: 'equipment', label: '设备' }];
+const cashSubtypes = [
+  { value: 'cash', label: '现金' },
+  { value: 'bank', label: '银行' },
+  { value: 'alipay', label: '支付宝' },
+  { value: 'wechat', label: '微信' },
+];
+const fixedSubtypes = [
+  { value: 'property', label: '房产' },
+  { value: 'vehicle', label: '车辆' },
+  { value: 'equipment', label: '设备' },
+];
 
 export default function AddAssetScreen() {
-  const { colors } = useTheme();
-  const { t } = useTranslation();
+  const { colors, spacing, typography } = useAppTheme();
   const [type, setType] = useState<'cash' | 'fixed'>('cash');
   const [subtype, setSubtype] = useState('bank');
   const [name, setName] = useState('');
@@ -23,8 +34,8 @@ export default function AddAssetScreen() {
   const subtypes = type === 'cash' ? cashSubtypes : fixedSubtypes;
 
   const handleSave = async () => {
-    if (!name.trim()) { Alert.alert(t('common.error'), t('common.errName')); return; }
-    if (!amount || parseFloat(amount) <= 0) { Alert.alert(t('common.error'), t('common.errAmount')); return; }
+    if (!name.trim()) { Alert.alert('错误', '请输入资产名称'); return; }
+    if (!amount || parseFloat(amount) <= 0) { Alert.alert('错误', '请输入有效金额'); return; }
 
     const asset = {
       id: Date.now().toString(),
@@ -45,81 +56,61 @@ export default function AddAssetScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-      <Card style={[styles.card, { backgroundColor: colors.card }]}>
-        <Card.Content>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addAsset.assetType')}</Text>
-          <SegmentedButtons
-            value={type}
-            onValueChange={(val) => { setType(val as 'cash' | 'fixed'); setSubtype(val === 'cash' ? 'bank' : 'property'); }}
-            buttons={[{ value: 'cash', label: t('addAsset.cash') }, { value: 'fixed', label: t('addAsset.fixed') }]}
-            style={styles.segmented}
-          />
-          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addAsset.subtype')}</Text>
-          <SegmentedButtons
-            value={subtype}
-            onValueChange={setSubtype}
-            buttons={subtypes.map(s => ({ value: s.value, label: s.label }))}
-            style={styles.segmented}
-          />
-          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addAsset.name')}</Text>
-          <TextInput
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.parchment }}
+      contentContainerStyle={{ padding: spacing.md, paddingBottom: 40 }}
+      keyboardShouldPersistTaps="handled"
+    >
+      <AppleCard padding="lg" style={{ marginBottom: spacing.md }}>
+        {/* 资产类型 */}
+        <Text style={[typography.captionStrong, { color: colors.textMuted, marginBottom: spacing.xs }]}>资产类型</Text>
+        <SegmentedControl
+          segments={[
+            { label: '流动资金', value: 'cash' },
+            { label: '固定资产', value: 'fixed' },
+          ]}
+          selected={type}
+          onValueChange={v => { setType(v as 'cash' | 'fixed'); setSubtype(v === 'cash' ? 'bank' : 'property'); }}
+        />
+
+        {/* 子类型 */}
+        <Text style={[typography.captionStrong, { color: colors.textMuted, marginBottom: spacing.xs, marginTop: spacing.sm }]}>子类型</Text>
+        <SegmentedControl
+          segments={subtypes}
+          selected={subtype}
+          onValueChange={setSubtype}
+        />
+
+        {/* 名称 */}
+        <View style={{ marginTop: spacing.md }}>
+          <AppleTextInput
+            label="资产名称"
             value={name}
             onChangeText={setName}
             placeholder="例如：招商银行储蓄卡"
-            placeholderTextColor={colors.textMuted}
-            style={[styles.input, { backgroundColor: colors.cardSecondary }]}
-            mode="outlined"
-            outlineColor={colors.border}
-            activeOutlineColor={colors.accent}
-            textColor={colors.text}
           />
-          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addAsset.note')}</Text>
-          <TextInput
-            value={note}
-            onChangeText={setNote}
-            placeholder="添加备注信息"
-            placeholderTextColor={colors.textMuted}
-            style={[styles.input, { minHeight: 60 }]}
-            mode="outlined"
-            outlineColor={colors.border}
-            activeOutlineColor={colors.accent}
-            textColor={colors.text}
-            multiline
-            numberOfLines={2}
-          />
-          <Text style={[styles.label, { color: colors.textSecondary }]}>{t('addAsset.amount')}</Text>
-          <TextInput
-            value={amount}
-            onChangeText={setAmount}
-            placeholder="0.00"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="decimal-pad"
-            style={[styles.input, { backgroundColor: colors.cardSecondary }]}
-            mode="outlined"
-            outlineColor={colors.border}
-            activeOutlineColor={colors.accent}
-            textColor={colors.text}
-          />
-        </Card.Content>
-      </Card>
-      <Button
-        mode="contained"
-        onPress={handleSave}
-        style={[styles.saveBtn, { backgroundColor: colors.accent }]}
-        buttonColor={colors.accent}
-        textColor={colors.accentText}
-      >{t('common.save')}</Button>
+        </View>
+
+        {/* 备注 */}
+        <AppleTextInput
+          label="备注（可选）"
+          value={note}
+          onChangeText={setNote}
+          placeholder="添加备注信息"
+          multiline
+        />
+
+        {/* 金额 */}
+        <AppleTextInput
+          label="金额（¥）"
+          value={amount}
+          onChangeText={setAmount}
+          placeholder="0.00"
+          keyboardType="decimal-pad"
+        />
+      </AppleCard>
+
+      <AppleButton title="保存" onPress={handleSave} fullWidth />
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 16 },
-  card: { marginBottom: 16, borderRadius: 12 },
-  label: { fontSize: 14, marginTop: 16, marginBottom: 8 },
-  segmented: { marginBottom: 8 },
-  input: { marginBottom: 8 },
-  saveBtn: { marginTop: 16 },
-});

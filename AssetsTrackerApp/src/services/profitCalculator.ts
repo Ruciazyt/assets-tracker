@@ -17,6 +17,7 @@ import { getCNStockQuote } from './market/cn-stock';
 import { getHKStockQuote } from './market/hk-stock';
 import { getFundInfo } from './market/fund';
 import { getUSDCNYRate } from './market/fx';
+import { fetchPricesFromAI, PriceRequest, AIPriceResult } from './market/ai-pricing';
 
 // 实时价格缓存（避免同周期内重复请求）
 const priceCache: Map<string, { price: number; timestamp: number }> = new Map();
@@ -172,15 +173,114 @@ export async function recalculateInvestment(
 /**
  * 批量重新计算所有投资的实时盈亏
  *
+ * 优先使用 AI 批量查询价格，如果 AI 不可用则 fallback 到逐个直接 API 调用。
  * 返回值中包含 newLastPrice，调用方应将对应投资的 lastPrice 更新后写回 AsyncStorage。
- * 更新策略：
- *   - newLastPrice > 0 → 用 newLastPrice 替换 lastPrice（正常价格更新）
- *   - newLastPrice == 0（如余额宝）→ 保持原 lastPrice 不变
  */
 export async function recalculateAllInvestments(
   invs: Investment[]
 ): Promise<(InvestmentUpdate & { newLastPrice: number })[]> {
   priceCache.clear();
+
+  if (!invs.length) return [];
+
+  // ── 尝试 AI 批量查询 ──
+  const priceRequests: PriceRequest[] = invs
+    .filter(inv => inv.subtype !== 'yuebao') // 余额宝无实时 API
+    .map(inv => {
+      const req: PriceRequest = { symbol: '', type: inv.subtype as any };
+      switch (inv.subtype) {
+        case 'gold':
+          req.symbol = 'AU99.99';
+          req.name = inv.name;
+          break;
+        case 'cn-stock':
+          req.symbol = inv.stockCode;
+          req.name = inv.name;
+          break;
+        case 'hk-stock':
+          req.symbol = inv.stockCode;
+          req.name = inv.name;
+          break;
+        case 'fund':
+          req.symbol = inv.fundCode;
+          req.name = inv.name;
+          break;
+      }
+      return req;
+    })
+    .filter(req => req.symbol);
+
+  let aiPrices: AIPriceResult[] = [];
+  try {
+    aiPrices = await fetchPricesFromAI(priceRequests);
+  } catch (e) {
+    console.error('[profitCalculator] AI pricing failed, falling back:', e);
+  }
+
+  // 如果 AI 成功获取了部分价格，用它们计算盈亏
+  if (aiPrices.length > 0) {
+    const priceMap = new Map<string, AIPriceResult>();
+    for (const p of aiPrices) {
+      priceMap.set(p.symbol, p);
+    }
+
+    return invs.map(inv => {
+      const update: InvestmentUpdate & { newLastPrice: number } = {
+        id: inv.id,
+        newPrice: inv.lastPrice,
+        newLastPrice: inv.lastPrice,
+        dailyPnl: 0,
+        dailyReturn: 0,
+        totalPnl: 0,
+      };
+
+      if (inv.subtype === 'yuebao') return update; // 余额宝不变
+
+      // 查找对应的 AI 价格
+      let symbol = '';
+      let costBasis = 0;
+      let shares = 0;
+
+      switch (inv.subtype) {
+        case 'gold':
+          symbol = 'AU99.99';
+          costBasis = inv.purchasePrice;
+          shares = inv.quantity;
+          break;
+        case 'cn-stock':
+          symbol = inv.stockCode;
+          costBasis = inv.purchasePrice;
+          shares = inv.share;
+          break;
+        case 'hk-stock':
+          symbol = inv.stockCode;
+          costBasis = inv.purchasePrice;
+          shares = inv.share;
+          break;
+        case 'fund':
+          symbol = inv.fundCode;
+          costBasis = inv.purchaseCost;
+          shares = inv.share;
+          break;
+      }
+
+      const aiResult = priceMap.get(symbol);
+      if (aiResult && aiResult.price > 0) {
+        update.newPrice = aiResult.price;
+        update.newLastPrice = aiResult.price;
+
+        if (inv.lastPrice > 0) {
+          update.dailyPnl = (aiResult.price - inv.lastPrice) * shares;
+          update.dailyReturn = ((aiResult.price - inv.lastPrice) / inv.lastPrice) * 100;
+        }
+        update.totalPnl = (aiResult.price - costBasis) * shares;
+      }
+
+      return update;
+    });
+  }
+
+  // ── Fallback: 逐个直接 API 调用 ──
   const results = await Promise.all(invs.map(inv => recalculateInvestment(inv)));
   return results;
 }

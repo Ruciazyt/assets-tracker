@@ -1,85 +1,90 @@
-// 根布局 - 主题配置 + 深色/亮色切换 + PIN 锁屏 + 价格提醒
+// 根布局 — Apple 风格 3-tab 导航
 
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, StyleSheet, AppState, AppStateStatus } from 'react-native';
-import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
-import { LanguageProvider } from '../src/i18n/LanguageContext';
-import { AuthProvider, useAuth } from '../src/context/AuthContext';
-import LockScreen from './lock';
-import { useEffect, useRef } from 'react';
-import { usePriceAlerts } from '../src/hooks/usePriceAlerts';
-import { useAutoRefresh } from '../src/hooks/useAutoRefresh';
-import AlertBanner from '../src/components/AlertBanner';
+import { View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ThemeProvider, useAppTheme } from '../src/theme/ThemeProvider';
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
-  const { colors } = useTheme();
-  const icons: Record<string, string> = {
-    index: '🏠',
-    assets: '💰',
-    investments: '📈',
-    import: '📷',
-    settings: '⚙️',
+  const { colors } = useAppTheme();
+  const iconMap: Record<string, any> = {
+    index: 'home-outline',
+    assets: 'wallet-outline',
+    settings: 'settings-outline',
+  };
+  const iconFilled: Record<string, any> = {
+    index: 'home',
+    assets: 'wallet',
+    settings: 'settings',
   };
 
+  const iconName = focused ? (iconFilled[name] || 'ellipse-outline') : (iconMap[name] || 'ellipse-outline');
+
   return (
-    <View style={styles.iconContainer}>
-      <Text style={[
-        styles.icon,
-        { color: focused ? colors.accent : colors.textMuted },
-      ]}>
-        {icons[name] || '•'}
-      </Text>
-    </View>
+    <Ionicons
+      name={iconName}
+      size={22}
+      color={focused ? colors.tabBarActive : colors.tabBarInactive}
+    />
   );
 }
 
 function RootLayoutInner() {
-  const { colors, isDark } = useTheme();
-  const { isLocked, pinEnabled, lock } = useAuth();
-  const appState = useRef(AppState.currentState);
-  const { triggeredAlerts, checkAlerts, dismissAlert } = usePriceAlerts();
-  const checkAlertsRef = useRef(checkAlerts);
-  checkAlertsRef.current = checkAlerts;
-
-  useAutoRefresh(() => {
-    checkAlertsRef.current();
-  });
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'background' || nextAppState === 'inactive') {
-        if (pinEnabled) {
-          lock();
-        }
-      }
-      appState.current = nextAppState;
-    });
-    return () => {
-      subscription.remove();
-    };
-  }, [pinEnabled, lock]);
+  const { colors } = useAppTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      <AlertBanner alerts={triggeredAlerts} onDismiss={dismissAlert} />
+    <View style={[styles.container, { backgroundColor: colors.parchment }]}>
+      <StatusBar style="dark" />
       <Tabs
         screenOptions={{
-          headerStyle: { backgroundColor: colors.tabBar },
-          headerTintColor: colors.text,
-          tabBarStyle: { backgroundColor: colors.tabBar, borderTopColor: colors.tabBarBorder, height: 60, paddingBottom: 8 },
-          tabBarActiveTintColor: colors.accent,
-          tabBarInactiveTintColor: colors.textMuted,
+          headerStyle: { backgroundColor: colors.canvas },
+          headerTintColor: colors.ink,
+          headerTitleStyle: {
+            fontSize: 17,
+            fontWeight: '600',
+          },
+          tabBarStyle: {
+            backgroundColor: colors.tabBarBg,
+            borderTopColor: colors.tabBarBorder,
+            height: 56,
+            paddingBottom: 4,
+            paddingTop: 4,
+          },
+          tabBarActiveTintColor: colors.tabBarActive,
+          tabBarInactiveTintColor: colors.tabBarInactive,
+          tabBarLabelStyle: {
+            fontSize: 10,
+            fontWeight: '500',
+          },
         }}
       >
-        <Tabs.Screen name="index" options={{ title: '首页', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="index" focused={focused} /> }} />
-        <Tabs.Screen name="assets" options={{ title: '资产', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="assets" focused={focused} /> }} />
-        <Tabs.Screen name="investments" options={{ title: '投资', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="investments" focused={focused} /> }} />
-        <Tabs.Screen name="import" options={{ title: '导入', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="import" focused={focused} /> }} />
-        <Tabs.Screen name="settings" options={{ title: '设置', tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="settings" focused={focused} /> }} />
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: '首页',
+            tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="index" focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="assets"
+          options={{
+            title: '资产',
+            tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="assets" focused={focused} />,
+          }}
+        />
+        {/* 隐藏的旧页面 */}
+        <Tabs.Screen name="investments" options={{ href: null }} />
+        <Tabs.Screen name="import" options={{ href: null }} />
+        <Tabs.Screen name="lock" options={{ href: null }} />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: '设置',
+            tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="settings" focused={focused} />,
+          }}
+        />
       </Tabs>
-      {isLocked && <LockScreen />}
     </View>
   );
 }
@@ -87,17 +92,11 @@ function RootLayoutInner() {
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <LanguageProvider>
-        <AuthProvider>
-          <RootLayoutInner />
-        </AuthProvider>
-      </LanguageProvider>
+      <RootLayoutInner />
     </ThemeProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  iconContainer: { alignItems: 'center', justifyContent: 'center' },
-  icon: { fontSize: 20 },
 });
