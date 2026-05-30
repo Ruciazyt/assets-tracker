@@ -12,6 +12,7 @@ export interface AIPricingConfig {
   provider: 'claude' | 'openai';
   apiKey: string;
   model?: string;
+  baseUrl?: string;   // 自定义接口地址
 }
 
 export interface PriceRequest {
@@ -81,8 +82,9 @@ ${lines.join('\n')}
 
 // ── AI 调用 ──
 
-async function callClaude(prompt: string, apiKey: string, model?: string): Promise<string> {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+async function callClaude(prompt: string, apiKey: string, model?: string, baseUrl?: string): Promise<string> {
+  const url = (baseUrl || 'https://api.anthropic.com') + '/v1/messages';
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -108,8 +110,9 @@ async function callClaude(prompt: string, apiKey: string, model?: string): Promi
   return textBlock?.text || '';
 }
 
-async function callOpenAI(prompt: string, apiKey: string, model?: string): Promise<string> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+async function callOpenAI(prompt: string, apiKey: string, model?: string, baseUrl?: string): Promise<string> {
+  const url = (baseUrl || 'https://api.openai.com') + '/v1/chat/completions';
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -183,8 +186,8 @@ export async function fetchPricesFromAI(items: PriceRequest[]): Promise<AIPriceR
   try {
     const prompt = buildPrompt(items);
     const rawText = config.provider === 'claude'
-      ? await callClaude(prompt, config.apiKey, config.model)
-      : await callOpenAI(prompt, config.apiKey, config.model);
+      ? await callClaude(prompt, config.apiKey, config.model, config.baseUrl)
+      : await callOpenAI(prompt, config.apiKey, config.model, config.baseUrl);
 
     const results = parseAIResponse(rawText);
     // 过滤掉价格为 0 的（可能是 AI 无法获取的标的）
@@ -202,8 +205,8 @@ export async function testAIConnection(config: AIPricingConfig): Promise<{ succe
   try {
     const prompt = '请查询黄金现货 AU99.99 的最新价格，返回 JSON 数组: [{"symbol": "AU99.99", "price": 数字, "change": 数字, "changePercent": 数字}]';
     const rawText = config.provider === 'claude'
-      ? await callClaude(prompt, config.apiKey, config.model)
-      : await callOpenAI(prompt, config.apiKey, config.model);
+      ? await callClaude(prompt, config.apiKey, config.model, config.baseUrl)
+      : await callOpenAI(prompt, config.apiKey, config.model, config.baseUrl);
 
     const results = parseAIResponse(rawText);
     if (results.length > 0 && results[0].price > 0) {

@@ -20,6 +20,7 @@ export default function SettingsScreen() {
   const [aiProvider, setAiProvider] = useState<'claude' | 'openai'>('claude');
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; error?: string } | null>(null);
 
@@ -39,26 +40,38 @@ export default function SettingsScreen() {
   const loadSettings = async () => {
     try {
       const aiCfg = await getAIConfig();
-      if (aiCfg) { setAiProvider(aiCfg.provider); setApiKey(aiCfg.apiKey); setModel(aiCfg.model || ''); }
+      if (aiCfg) {
+        setAiProvider(aiCfg.provider);
+        setApiKey(aiCfg.apiKey);
+        setModel(aiCfg.model || '');
+        setBaseUrl(aiCfg.baseUrl || '');
+      }
       const settingsStr = await AsyncStorage.getItem('@assets_tracker/settings');
       if (settingsStr) { setRefreshInterval(Number(JSON.parse(settingsStr).refreshInterval ?? 0)); }
       const repo = await getGitHubRepo();
       if (repo) { setGithubOwner(repo.owner); setGithubRepoName(repo.repo); }
-    } catch (e) { console.error('Load settings error:', e); }
+    } catch (e) { console.error('加载设置失败', e); }
   };
 
   // ── AI ──
+  const buildAIConfig = (): AIPricingConfig => ({
+    provider: aiProvider,
+    apiKey: apiKey.trim(),
+    model: model.trim() || undefined,
+    baseUrl: baseUrl.trim() || undefined,
+  });
+
   const handleSaveAIConfig = async () => {
-    if (!apiKey.trim()) { Alert.alert('错误', '请输入 API Key'); return; }
-    await saveAIConfig({ provider: aiProvider, apiKey: apiKey.trim(), model: model.trim() || undefined });
-    Alert.alert('成功', 'AI 配置已保存');
+    if (!apiKey.trim()) { Alert.alert('错误', '请输入接口密钥'); return; }
+    await saveAIConfig(buildAIConfig());
+    Alert.alert('成功', '接口配置已保存');
   };
 
   const handleTestConnection = async () => {
-    if (!apiKey.trim()) { Alert.alert('错误', '请先输入 API Key'); return; }
+    if (!apiKey.trim()) { Alert.alert('错误', '请先输入接口密钥'); return; }
     setTesting(true); setTestResult(null);
     try {
-      const result = await testAIConnection({ provider: aiProvider, apiKey: apiKey.trim(), model: model.trim() || undefined });
+      const result = await testAIConnection(buildAIConfig());
       setTestResult(result);
       Alert.alert(result.success ? '成功' : '失败', result.success ? '连接测试通过' : (result.error || '连接失败'));
     } catch (e: any) {
@@ -111,7 +124,7 @@ export default function SettingsScreen() {
   };
 
   const handleCheckUpdate = async () => {
-    if (!githubOwner.trim() || !githubRepo.trim()) { Alert.alert('提示', '请先配置 GitHub 仓库'); return; }
+    if (!githubOwner.trim() || !githubRepo.trim()) { Alert.alert('提示', '请先配置代码仓库'); return; }
     await saveGitHubRepo(githubOwner.trim(), githubRepo.trim());
     setCheckingUpdate(true); setUpdateInfo(null);
     try {
@@ -133,11 +146,9 @@ export default function SettingsScreen() {
 
   const handleDownloadUpdate = async (update: AppUpdate) => {
     setDownloading(true);
-    try {
-      await downloadAndInstall(update);
-    } catch (e: any) {
-      Alert.alert('错误', e.message || '下载失败');
-    } finally { setDownloading(false); }
+    try { await downloadAndInstall(update); }
+    catch (e: any) { Alert.alert('错误', e.message || '下载失败'); }
+    finally { setDownloading(false); }
   };
 
   return (
@@ -145,22 +156,33 @@ export default function SettingsScreen() {
       style={{ flex: 1, backgroundColor: colors.parchment }}
       contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.xxl }}
     >
-      {/* ── AI 价格服务 ── */}
+      {/* ── 接口服务 ── */}
       <AppleCard padding="lg" style={{ marginBottom: spacing.md }}>
-        <SectionHeader title="AI 价格服务" />
+        <SectionHeader title="接口服务" />
         <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.md }]}>
-          配置 AI 获取市场价格 + 截图识别
+          配置 AI 接口获取市场价格与截图识别
         </Text>
-        <Text style={[typography.captionStrong, { color: colors.textMuted, marginBottom: spacing.xs }]}>AI 服务</Text>
+        <Text style={[typography.captionStrong, { color: colors.textMuted, marginBottom: spacing.xs }]}>服务商</Text>
         <SegmentedControl
           segments={[{ label: 'Claude', value: 'claude' }, { label: 'OpenAI', value: 'openai' }]}
           selected={aiProvider}
           onValueChange={v => { setAiProvider(v as 'claude' | 'openai'); setTestResult(null); }}
         />
         <View style={{ marginTop: spacing.sm }}>
-          <AppleTextInput label="API Key" value={apiKey} onChangeText={setApiKey} placeholder={aiProvider === 'claude' ? 'sk-ant-...' : 'sk-...'} />
+          <AppleTextInput label="接口密钥" value={apiKey} onChangeText={setApiKey} placeholder={aiProvider === 'claude' ? 'sk-ant-...' : 'sk-...'} />
         </View>
-        <AppleTextInput label="模型（可选）" value={model} onChangeText={setModel} placeholder={aiProvider === 'claude' ? 'claude-sonnet-4-20250514' : 'gpt-4o'} />
+        <AppleTextInput
+          label="接口地址（留空用默认）"
+          value={baseUrl}
+          onChangeText={setBaseUrl}
+          placeholder={aiProvider === 'claude' ? 'https://api.anthropic.com' : 'https://api.openai.com'}
+        />
+        <AppleTextInput
+          label="模型（留空用默认）"
+          value={model}
+          onChangeText={setModel}
+          placeholder={aiProvider === 'claude' ? 'claude-sonnet-4-20250514' : 'gpt-4o'}
+        />
         {testResult && (
           <View style={{ backgroundColor: testResult.success ? colors.gainBackground : colors.lossBackground, borderRadius: radius.md, padding: spacing.sm, marginTop: spacing.sm }}>
             <Text style={[typography.caption, { color: testResult.success ? colors.gain : colors.loss }]}>{testResult.success ? '连接成功' : testResult.error}</Text>
@@ -172,7 +194,7 @@ export default function SettingsScreen() {
         </View>
       </AppleCard>
 
-      {/* ── 自动刷新 — 修复溢出：用 ScrollView 包裹 SegmentedControl ── */}
+      {/* ── 自动刷新 ── */}
       <AppleCard padding="lg" style={{ marginBottom: spacing.md }}>
         <SectionHeader title="自动刷新" />
         <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.sm }]}>
@@ -181,10 +203,10 @@ export default function SettingsScreen() {
         <SegmentedControl
           segments={[
             { label: '关闭', value: '0' },
-            { label: '15s', value: '15' },
-            { label: '30s', value: '30' },
-            { label: '60s', value: '60' },
-            { label: '5m', value: '300' },
+            { label: '15秒', value: '15' },
+            { label: '30秒', value: '30' },
+            { label: '60秒', value: '60' },
+            { label: '5分钟', value: '300' },
           ]}
           selected={String(refreshInterval)}
           onValueChange={v => handleRefreshChange(Number(v))}
@@ -196,12 +218,12 @@ export default function SettingsScreen() {
       <AppleCard padding="lg" style={{ marginBottom: spacing.md }}>
         <SectionHeader title="应用更新" />
         <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.sm }]}>
-          当前版本 v{getCurrentVersion()} — 从 GitHub Releases 检查更新
+          当前版本 v{getCurrentVersion()}
         </Text>
-        <AppleTextInput label="GitHub 仓库 Owner" value={githubOwner} onChangeText={setGithubOwner} placeholder="例如：ruciaz" />
-        <AppleTextInput label="GitHub 仓库名" value={githubRepo} onChangeText={setGithubRepoName} placeholder="例如：assets-tracker" />
+        <AppleTextInput label="代码仓库所有者" value={githubOwner} onChangeText={setGithubOwner} placeholder="例如：ruciaz" />
+        <AppleTextInput label="代码仓库名称" value={githubRepo} onChangeText={setGithubRepoName} placeholder="例如：assets-tracker" />
         <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
-          <View style={{ flex: 1 }}><AppleButton title="保存仓库" onPress={handleSaveRepo} variant="secondary" fullWidth /></View>
+          <View style={{ flex: 1 }}><AppleButton title="保存" onPress={handleSaveRepo} variant="secondary" fullWidth /></View>
           <View style={{ flex: 1 }}>
             <AppleButton
               title={checkingUpdate ? '检查中...' : downloading ? '下载中...' : '检查更新'}
@@ -232,10 +254,10 @@ export default function SettingsScreen() {
       <AppleCard padding="lg" style={{ marginBottom: spacing.md }}>
         <SectionHeader title="关于" />
         <View style={{ alignItems: 'center', paddingVertical: spacing.sm }}>
-          <Text style={[typography.tagline, { color: colors.ink }]}>Assets Tracker</Text>
-          <Text style={[typography.finePrint, { color: colors.textMuted, marginTop: spacing.xxs }]}>Version {getCurrentVersion()}</Text>
+          <Text style={[typography.tagline, { color: colors.ink }]}>资产追踪器</Text>
+          <Text style={[typography.finePrint, { color: colors.textMuted, marginTop: spacing.xxs }]}>版本 {getCurrentVersion()}</Text>
           <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' }]}>
-            资产追踪器 — 管理流动资金、固定资产和投资理财
+            管理流动资金、固定资产和投资理财
           </Text>
         </View>
       </AppleCard>

@@ -171,7 +171,7 @@ export default function AddInvestmentScreen() {
     >
       {/* AI 图片导入 */}
       <AppleButton
-        title={importing ? 'AI 识别中...' : '📸 AI 截图导入'}
+        title={importing ? '识别中...' : '📸 截图导入'}
         onPress={handleImageImport}
         variant="secondary"
         fullWidth

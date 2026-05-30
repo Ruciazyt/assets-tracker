@@ -63,7 +63,8 @@ export async function analyzeImage(imageBase64: string, mimeType: string = 'imag
 }
 
 async function callClaudeVision(config: AIPricingConfig, imageBase64: string, mimeType: string): Promise<string> {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const url = (config.baseUrl || 'https://api.anthropic.com') + '/v1/messages';
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -94,7 +95,8 @@ async function callClaudeVision(config: AIPricingConfig, imageBase64: string, mi
 }
 
 async function callOpenAIVision(config: AIPricingConfig, imageBase64: string, mimeType: string): Promise<string> {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const url = (config.baseUrl || 'https://api.openai.com') + '/v1/chat/completions';
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

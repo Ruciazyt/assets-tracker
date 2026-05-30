@@ -265,7 +265,7 @@ export default function InvestmentDetailScreen() {
                 />
                 <AppleTextInput label="买入单价（¥/克）" value={purchasePrice} onChangeText={setPurchasePrice} keyboardType="decimal-pad" />
                 <AppleTextInput label="克数" value={quantity} onChangeText={setQuantity} keyboardType="decimal-pad" />
-                <AppleTextInput label="买入日期" value={purchaseDate} onChangeText={setPurchaseDate} placeholder="YYYY-MM-DD" />
+                <AppleTextInput label="买入日期" value={purchaseDate} onChangeText={setPurchaseDate} placeholder="例如：2024-01-15" />
               </>
             )}
             {investment.subtype === 'yuebao' && (
