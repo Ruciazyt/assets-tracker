@@ -3,7 +3,12 @@
     "allow": [
       "Bash(node -e \"const fs = require\\('expo-file-system'\\); console.log\\(Object.keys\\(fs\\).filter\\(k => k.toLowerCase\\(\\).includes\\('cache'\\) || k.toLowerCase\\(\\).includes\\('dir'\\)\\).join\\(', '\\)\\)\")",
       "Bash(python -c ' *)",
-      "Bash(npx expo-doctor *)"
+      "Bash(npx expo-doctor *)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/expo-modules-core/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/expo/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/react-native/package.json'\\).version\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(git add *)"
     ]
   }
 }
