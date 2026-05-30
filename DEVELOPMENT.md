@@ -86,9 +86,12 @@
 | 2026-05-30 (深夜3) | i18n: assets.tsx 硬编码修复（暂无资产/点击下方按钮添加资产/金额→t()）；index.tsx 趋势图暂无数据硬编码修复 |
 
 | 2026-05-30 (深夜4) | fix: profitCalculator add newLastPrice field; lastPrice correctly persisted to AsyncStorage after each refresh cycle; dailyPnl now tracks intra-day change |
+| 2026-05-30 (下午2) | fix: restore MiniMax Vision OCR to Expo project (AssetsTrackerApp/src/services/parser/ocr.ts was deleted in cicd cleanup); parseScreenshot now calls real MiniMax Vision API |
+
 ## 已知问题 / TODO
 
 - [x] 历史收益趋势图表（Phase 4）— 折线图+三指标切换（资产值/累计收益/日收益）+颜色编码
 - [x] 收益图表交互增强（Phase 4）— 点击查看某日详情 ✅ 投资页柱状图点击显示tooltip ✅ 首页趋势图点击显示tooltip
 - [x] PIN/密码本地加密存储（SHA-256 哈希替代明文存储，expo-crypto）
 - [x] 港股持仓成本显示（purchaseCurrency 字段支持后，页面未展示购入货币） ✅ 已完成
+- [ ] ~~截图OCR解析~~ → 已完成 (MiniMax Vision API)
