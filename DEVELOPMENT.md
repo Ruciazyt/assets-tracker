@@ -81,6 +81,8 @@
 | 2026-05-30 (凌晨2) | fix: getJPYRate 用实时 USD/JPY 查询替代硬编码 150；修复 gold cache key 使用固定 key 'gold:spot' 避免同一品种多个头寸缓存失效 |
 | 2026-05-30 (凌晨4) | fix: profitCalculator 所有子类(gold/股票/基金) dailyPnl 改用 inv.lastPrice（昨日收盘）而非 purchasePrice（买入价）；totalPnl 改为 currentPrice*quantity - cost |
 
+| 2026-05-30 (深夜2) | feat: 投资详情页 investment-detail.tsx（查看/编辑/删除）+ investments 列表点击跳转 |
+
 ## 已知问题 / TODO
 
 - [x] 历史收益趋势图表（Phase 4）— 折线图+三指标切换（资产值/累计收益/日收益）+颜色编码
