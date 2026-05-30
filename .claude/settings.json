@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node -e \"const fs = require\\('expo-file-system'\\); console.log\\(Object.keys\\(fs\\).filter\\(k => k.toLowerCase\\(\\).includes\\('cache'\\) || k.toLowerCase\\(\\).includes\\('dir'\\)\\).join\\(', '\\)\\)\")"
+      "Bash(node -e \"const fs = require\\('expo-file-system'\\); console.log\\(Object.keys\\(fs\\).filter\\(k => k.toLowerCase\\(\\).includes\\('cache'\\) || k.toLowerCase\\(\\).includes\\('dir'\\)\\).join\\(', '\\)\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(npx expo-doctor *)"
     ]
   }
 }
