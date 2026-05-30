@@ -6,24 +6,11 @@ import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeProvider, useAppTheme } from '../src/theme/ThemeProvider';
 
-function TabIcon({ name, focused }: { name: string; focused: boolean }) {
+function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
   const { colors } = useAppTheme();
-  const iconMap: Record<string, any> = {
-    index: 'home-outline',
-    assets: 'wallet-outline',
-    settings: 'settings-outline',
-  };
-  const iconFilled: Record<string, any> = {
-    index: 'home',
-    assets: 'wallet',
-    settings: 'settings',
-  };
-
-  const iconName = focused ? (iconFilled[name] || 'ellipse-outline') : (iconMap[name] || 'ellipse-outline');
-
   return (
     <Ionicons
-      name={iconName}
+      name={focused ? icon : (icon + '-outline') as any}
       size={22}
       color={focused ? colors.tabBarActive : colors.tabBarInactive}
     />
@@ -63,25 +50,21 @@ function RootLayoutInner() {
           name="index"
           options={{
             title: '首页',
-            tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="index" focused={focused} />,
+            tabBarIcon: ({ focused }) => <TabIcon icon="home" focused={focused} />,
           }}
         />
         <Tabs.Screen
           name="assets"
           options={{
             title: '资产',
-            tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="assets" focused={focused} />,
+            tabBarIcon: ({ focused }) => <TabIcon icon="wallet" focused={focused} />,
           }}
         />
-        {/* 隐藏的旧页面 */}
-        <Tabs.Screen name="investments" options={{ href: null }} />
-        <Tabs.Screen name="import" options={{ href: null }} />
-        <Tabs.Screen name="lock" options={{ href: null }} />
         <Tabs.Screen
           name="settings"
           options={{
             title: '设置',
-            tabBarIcon: ({ focused }: { focused: boolean }) => <TabIcon name="settings" focused={focused} />,
+            tabBarIcon: ({ focused }) => <TabIcon icon="settings" focused={focused} />,
           }}
         />
       </Tabs>

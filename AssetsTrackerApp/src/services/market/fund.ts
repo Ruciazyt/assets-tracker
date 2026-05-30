@@ -1,43 +1,75 @@
-// 基金净值服务
+// 基金服务 — 净值查询 + 搜索
 
-import { query } from './common';
+import { query, getDataTables, extractField } from './common';
 
 export interface FundInfo {
   code: string;
   name: string;
-  netValue: number;     // 最新净值
-  dailyChange: number;   // 每日涨跌
-  changePercent: number; // 涨跌幅%
+  netValue: number;
+  changePercent: number;
+  dailyChange: number;
   updateDate: string;
 }
 
+/** 按基金代码查询净值 */
 export async function getFundInfo(fundCode: string): Promise<FundInfo | null> {
-  const result = await query(`${fundCode} 基金 最新净值 涨跌幅`);
-  
+  const result = await query<any>(`${fundCode} 基金 净值`);
   if (!result.success || !result.data) return null;
-  
-  const data = result.data as any;
-  try {
-    const tableList = data?.searchDataResultDTO?.dataTableDTOList || [];
-    for (const table of tableList) {
-      const rawTable = table.rawTable || {};
-      const f2 = rawTable.f2?.[0]; // 最新价/净值
-      const f3 = rawTable.f3?.[0]; // 涨跌幅
-      
-      if (f2) {
-        return {
-          code: fundCode,
-          name: table.entityName?.replace(`(${fundCode})`, '').trim() || fundCode,
-          netValue: parseFloat(f2),
-          changePercent: parseFloat(f3 || '0'),
-          dailyChange: 0,
-          updateDate: new Date().toISOString().split('T')[0],
-        };
+
+  const tables = getDataTables(result.data);
+  for (const table of tables) {
+    const netValueStr = extractField(table, '单位净值');
+    if (netValueStr && parseFloat(netValueStr) > 0) {
+      const entityName = table.entityName || fundCode;
+      // entityName 格式: "华泰柏瑞沪深300ETF(510300.SH)"
+      const name = entityName.split('(')[0]?.trim() || fundCode;
+
+      return {
+        code: fundCode,
+        name,
+        netValue: parseFloat(netValueStr),
+        changePercent: 0,
+        dailyChange: 0,
+        updateDate: new Date().toISOString().split('T')[0],
+      };
+    }
+  }
+  return null;
+}
+
+// ── 基金搜索 ──
+
+export interface FundSearchResult {
+  code: string;
+  name: string;
+  type: string;
+}
+
+/** 按关键词搜索基金 */
+export async function searchFunds(keyword: string): Promise<FundSearchResult[]> {
+  if (!keyword.trim()) return [];
+
+  const result = await query<any>(`${keyword} 基金`);
+  if (!result.success || !result.data) return [];
+
+  const tables = getDataTables(result.data);
+  const funds: FundSearchResult[] = [];
+
+  for (const table of tables) {
+    const entityName = table.entityName;
+    if (!entityName || !entityName.includes('(')) continue;
+
+    // 解析 "基金名称(代码)" 格式
+    const match = entityName.match(/^(.+?)\((\d+)/);
+    if (match) {
+      const name = match[1].trim();
+      const code = match[2];
+      // 去重
+      if (!funds.find(f => f.code === code)) {
+        funds.push({ code, name, type: '基金' });
       }
     }
-  } catch (e) {
-    console.error('Fund parse error:', e);
   }
-  
-  return null;
+
+  return funds.slice(0, 20);
 }

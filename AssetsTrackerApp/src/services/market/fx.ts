@@ -1,138 +1,55 @@
-// 汇率服务 - 支持日元等主要货币
+// 汇率服务
 
-import { query } from './common';
+import { query, getDataTables, extractField } from './common';
 
 export interface ExchangeRate {
   from: string;
   to: string;
   rate: number;
-  change: number;
-  changePercent: number;
   timestamp: string;
 }
 
-// 获取汇率
-export async function getExchangeRate(from: string, to: string): Promise<ExchangeRate | null> {
-  const pair = `${from}/${to}`;
-  const result = await query(`${pair} 汇率 换算 最新`);
-  
-  if (!result.success || !result.data) return null;
-  
-  const data = result.data as any;
-  try {
-    const tableList = data?.searchDataResultDTO?.dataTableDTOList || [];
-    for (const table of tableList) {
-      const rawTable = table.rawTable || {};
-      const f2 = rawTable.f2?.[0];
-      const f3 = rawTable.f3?.[0];
-      const f4 = rawTable.f4?.[0];
-      
-      if (f2) {
-        return {
-          from,
-          to,
-          rate: parseFloat(f2),
-          change: parseFloat(f4 || '0'),
-          changePercent: parseFloat(f3 || '0'),
-          timestamp: new Date().toISOString(),
-        };
-      }
-    }
-  } catch (e) {
-    console.error('Exchange rate parse error:', e);
-  }
-  
-  return null;
-}
-
-// 获取美元/人民币汇率 (USD/CNY)
 export async function getUSDCNYRate(): Promise<ExchangeRate | null> {
-  const result = await query(`美元兑人民币 USD/CNY 汇率 最新`);
-
+  const result = await query<any>('美元兑人民币 USD/CNY 汇率 最新');
   if (!result.success || !result.data) return null;
 
-
-  const data = result.data as any;
-  try {
-    const tableList = data?.searchDataResultDTO?.dataTableDTOList || [];
-    for (const table of tableList) {
-      const rawTable = table.rawTable || {};
-      const f2 = rawTable.f2?.[0];
-
-      if (f2) {
-        return {
-          from: 'USD',
-          to: 'CNY',
-          rate: parseFloat(f2),
-          change: 0,
-          changePercent: 0,
-          timestamp: new Date().toISOString(),
-        };
-      }
+  const tables = getDataTables(result.data);
+  for (const table of tables) {
+    const rate = extractField(table, '汇率') || extractField(table, '最新价');
+    if (rate && parseFloat(rate) > 0) {
+      return { from: 'USD', to: 'CNY', rate: parseFloat(rate), timestamp: new Date().toISOString() };
     }
-  } catch (e) {
-    console.error('USD/CNY rate parse error:', e);
   }
-
   return null;
 }
 
-// 获取日元汇率 (JPY/CNY)
 export async function getJPYRate(): Promise<ExchangeRate | null> {
-  // 先查 USD/CNY
-  const usdCnyResult = await getUSDCNYRate();
-  if (!usdCnyResult) return null;
-  const usdCny = usdCnyResult.rate;
+  const usdCny = await getUSDCNYRate();
+  if (!usdCny) return null;
 
-  // 再查 USD/JPY 实时汇率
-  const usdJpyResult = await query<any>(`美元兑日元 USD/JPY 汇率 最新`);
-  let usdJpy = 150; // 默认 fallback
-  if (usdJpyResult.success && usdJpyResult.data) {
-    const data = usdJpyResult.data as any;
-    const tableList = data?.searchDataResultDTO?.dataTableDTOList || [];
-    for (const table of tableList) {
-      const rawTable = table.rawTable || {};
-      const f2 = rawTable.f2?.[0];
-      if (f2) {
-        usdJpy = parseFloat(f2);
-        break;
-      }
+  const result = await query<any>('美元兑日元 USD/JPY 汇率 最新');
+  let usdJpy = 150;
+  if (result.success && result.data) {
+    for (const table of getDataTables(result.data)) {
+      const rate = extractField(table, '汇率') || extractField(table, '最新价');
+      if (rate && parseFloat(rate) > 0) { usdJpy = parseFloat(rate); break; }
     }
   }
 
-  // JPY/CNY = USD/CNY / USD/JPY
-  const jpyCny = usdJpy > 0 ? usdCny / usdJpy : usdCny / 150;
-
-  return {
-    from: 'JPY',
-    to: 'CNY',
-    rate: parseFloat(jpyCny.toFixed(4)),
-    change: 0,
-    changePercent: 0,
-    timestamp: new Date().toISOString(),
-  };
+  const jpyCny = usdJpy > 0 ? usdCny.rate / usdJpy : usdCny.rate / 150;
+  return { from: 'JPY', to: 'CNY', rate: parseFloat(jpyCny.toFixed(4)), timestamp: new Date().toISOString() };
 }
 
-// 批量获取所有需要的汇率，返回货币->CNY汇率 Map
-// rateMap[currency] = how many CNY per 1 unit of that currency
 export async function getExchangeRates(): Promise<Map<string, number>> {
-  const [usdResult, hkdResult, jpyResult] = await Promise.allSettled([
-    getUSDCNYRate(),
-    getExchangeRate('HKD', 'CNY'),
-    getJPYRate(),
-  ]);
-
-  const usdCny = usdResult.status === 'fulfilled' && usdResult.value ? usdResult.value.rate : 1;
-  const hkdCny = hkdResult.status === 'fulfilled' && hkdResult.value ? hkdResult.value.rate : usdCny / 7.8;
-  const jpyCny = jpyResult.status === 'fulfilled' && jpyResult.value ? jpyResult.value.rate : usdCny / 150;
-
-  // Rates expressed as: 1 unit of currency = X CNY
-  const rateMap = new Map<string, number>([
-    ['USD', usdCny],
-    ['HKD', hkdCny],
-    ['JPY', jpyCny],
-    ['CNY', 1],
-  ]);
-
-  return rateMap;
+  const [usdR, hkdR, jpyR] = await Promise.allSettled([getUSDCNYRate(), query<any>('HKD/CNY 汇率'), getJPYRate()]);
+  const usdCny = usdR.status === 'fulfilled' && usdR.value ? usdR.value.rate : 7.2;
+  const jpyCny = jpyR.status === 'fulfilled' && jpyR.value ? jpyR.value.rate : usdCny / 150;
+  let hkdCny = usdCny / 7.8;
+  if (hkdR.status === 'fulfilled' && hkdR.value?.success && hkdR.value.data) {
+    for (const table of getDataTables(hkdR.value.data)) {
+      const rate = extractField(table, '汇率') || extractField(table, '最新价');
+      if (rate && parseFloat(rate) > 0) { hkdCny = parseFloat(rate); break; }
+    }
+  }
+  return new Map([['USD', usdCny], ['HKD', hkdCny], ['JPY', jpyCny], ['CNY', 1]]);
 }

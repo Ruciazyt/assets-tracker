@@ -1,6 +1,6 @@
-// 港股股票行情服务
+// 港股行情服务
 
-import { query } from './common';
+import { query, getDataTables, extractField } from './common';
 
 export interface HKStockQuote {
   code: string;
@@ -9,51 +9,31 @@ export interface HKStockQuote {
   priceCNY: number;
   change: number;
   changePercent: number;
-  volume: number;
-  amountHKD: number;
   exchangeRate: number;
   timestamp: string;
 }
 
-// 获取港股股票行情
 export async function getHKStockQuote(stockCode: string): Promise<HKStockQuote | null> {
-  const result = await query(`${stockCode} 港股 最新价 涨跌幅 成交量`);
-  
+  const result = await query<any>(`${stockCode} 港股 最新价`);
   if (!result.success || !result.data) return null;
-  
-  const data = result.data as any;
-  try {
-    const tableList = data?.searchDataResultDTO?.dataTableDTOList || [];
-    for (const table of tableList) {
-      const rawTable = table.rawTable || {};
-      const f2 = rawTable.f2?.[0];
-      const f3 = rawTable.f3?.[0];
-      const f4 = rawTable.f4?.[0];
-      const f5 = rawTable.f5?.[0];
-      const f6 = rawTable.f6?.[0];
-      
-      if (f2) {
-        const priceHKD = parseFloat(f2);
-        const changePercent = parseFloat(f3 || '0');
-        // 假设汇率 1 HKD = 0.92 CNY (从系统获取)
-        const exchangeRate = 0.92;
-        return {
-          code: stockCode,
-          name: table.entityName?.split('(')[0]?.trim() || stockCode,
-          priceHKD,
-          priceCNY: priceHKD * exchangeRate,
-          change: parseFloat(f4 || '0'),
-          changePercent,
-          volume: parseInt(f5 || '0'),
-          amountHKD: parseFloat(f6 || '0'),
-          exchangeRate,
-          timestamp: new Date().toISOString(),
-        };
-      }
+
+  const tables = getDataTables(result.data);
+  for (const table of tables) {
+    const price = extractField(table, '最新价') || extractField(table, '收盘价');
+    if (price && parseFloat(price) > 0) {
+      const priceHKD = parseFloat(price);
+      const exchangeRate = 0.92;
+      const entityName = table.entityName || stockCode;
+      const name = entityName.split('(')[0]?.trim() || stockCode;
+      const changePercent = extractField(table, '涨跌幅') || '0';
+
+      return {
+        code: stockCode, name, priceHKD,
+        priceCNY: priceHKD * exchangeRate,
+        change: 0, changePercent: parseFloat(changePercent),
+        exchangeRate, timestamp: new Date().toISOString(),
+      };
     }
-  } catch (e) {
-    console.error('HK Stock parse error:', e);
   }
-  
   return null;
 }
