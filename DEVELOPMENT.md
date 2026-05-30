@@ -85,6 +85,7 @@
 | 2026-05-30 (深夜3) | fix: PIN SHA-256 哈希存储（expo-crypto）；async verifyPin；settings 和 lock 页面适配异步验证；i18n PIN 错误提示 |
 | 2026-05-30 (深夜3) | i18n: assets.tsx 硬编码修复（暂无资产/点击下方按钮添加资产/金额→t()）；index.tsx 趋势图暂无数据硬编码修复 |
 
+| 2026-05-30 (深夜4) | fix: profitCalculator add newLastPrice field; lastPrice correctly persisted to AsyncStorage after each refresh cycle; dailyPnl now tracks intra-day change |
 ## 已知问题 / TODO
 
 - [x] 历史收益趋势图表（Phase 4）— 折线图+三指标切换（资产值/累计收益/日收益）+颜色编码
