@@ -4,3 +4,15 @@ android/app/build/
 .gradle/
 build/
 *.keystore
+
+# Expo 缓存（不应提交）
+.expo/
+web-build/
+
+# Android 构建产物
+AssetsTrackerApp/android/app/build/
+AssetsTrackerApp/android/.gradle/
+
+# 系统文件
+.DS_Store
+Thumbs.db

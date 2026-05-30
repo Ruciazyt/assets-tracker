@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -18,7 +19,12 @@ jobs:
           cache: 'npm'
           cache-dependency-path: AssetsTrackerApp/package-lock.json
 
-      - name: Get version and run number
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Get version
         id: version
         run: |
           VERSION=$(node -p "require('./AssetsTrackerApp/package.json').version")
@@ -26,19 +32,6 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "RUN_NUMBER=$RUN_NUM" >> $GITHUB_OUTPUT
           echo "TAG=v${VERSION}-build${RUN_NUM}" >> $GITHUB_OUTPUT
-
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: AssetsTrackerApp/node_modules
-          key: assets-node-${{ runner.os }}-${{ hashFiles('AssetsTrackerApp/package-lock.json') }}
-          restore-keys: |
-            assets-node-${{ runner.os }}-
-
-      - name: Setup Android SDK
-        run: |
-          mkdir -p /home/runner/work/_temp/android-sdk
-          echo "sdk.dir=/home/runner/work/_temp/android-sdk" >> AssetsTrackerApp/android/local.properties
 
       - name: Install dependencies
         run: |
@@ -48,57 +41,23 @@ jobs:
       - name: Expo prebuild
         run: |
           cd AssetsTrackerApp
-          rm -rf android
           npx expo prebuild --platform android --clean
 
-      - name: Patch settings.gradle - inject includeBuild for expo-modules-core & expo-module-gradle-plugin
-        run: |
-          cd AssetsTrackerApp/android
-          python3 << 'PYEOF'
-          with open('settings.gradle', 'r') as f:
-              lines = f.readlines()
-          insert_after = None
-          for i, line in enumerate(lines):
-              if 'react-native/gradle-plugin' in line and 'includeBuild' in line:
-                  insert_after = i
-                  break
-          if insert_after is not None:
-              new_lines = [
-                  '    includeBuild(new File(["node", "--print", "require.resolve(\'expo-modules-core/package.json\', { paths: [require.resolve(\'expo/package.json\')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "/android").getParentFile().toString())\n',
-                  '    includeBuild(new File(["node", "--print", "require.resolve(\'expo-module-gradle-plugin/package.json\', { paths: [require.resolve(\'expo/package.json\')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath()))\n',
-              ]
-              for nl in new_lines:
-                  lines.insert(insert_after + 1, nl)
-                  insert_after += 1
-          with open('settings.gradle', 'w') as f:
-              f.writelines(lines)
-          print('Patched settings.gradle OK')
-          PYEOF
+      - name: Debug settings.gradle
+        run: cat AssetsTrackerApp/android/settings.gradle
 
       - name: Build APK
-        env:
-          NODE_ENV: production
+        working-directory: AssetsTrackerApp/android
         run: |
-          cd AssetsTrackerApp/android
-          rm -rf ~/.gradle/caches/build-cache-*
-          ./gradlew :app:assembleRelease --no-build-cache -Dorg.gradle.jvmargs="-Xmx1536m" --no-daemon -x test 2>&1 | tee /tmp/gradle.log
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            echo "=== GRADLE FAILURE ==="
-            tail -50 /tmp/gradle.log
-            exit 1
-          fi
+          ./gradlew :app:assembleRelease \
+            --no-daemon \
+            -x test \
+            -Dorg.gradle.jvmargs="-Xmx2048m"
 
-      - name: Verify APK exists
+      - name: Verify APK
         run: |
           APK=AssetsTrackerApp/android/app/build/outputs/apk/release/app-release.apk
-          if [ ! -f "$APK" ]; then
-            echo "APK not found"
-            ls -la AssetsTrackerApp/android/app/build/outputs/apk/ 2>/dev/null || true
-            exit 1
-          fi
-
-      - name: Rename APK
-        run: cp AssetsTrackerApp/android/app/build/outputs/apk/release/app-release.apk /tmp/assets-tracker-${{ steps.version.outputs.VERSION }}-build${{ steps.version.outputs.RUN_NUMBER }}.apk
+          test -f "$APK" && echo "APK found: $(ls -lh $APK)" || (echo "APK not found" && exit 1)
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -112,6 +71,6 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            /tmp/assets-tracker-${{ steps.version.outputs.VERSION }}-build${{ steps.version.outputs.RUN_NUMBER }}.apk
+            AssetsTrackerApp/android/app/build/outputs/apk/release/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
