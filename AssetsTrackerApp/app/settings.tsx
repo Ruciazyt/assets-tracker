@@ -481,17 +481,18 @@ export default function SettingsScreen() {
             <TextInput
               style={[styles.pinInput, { color: colors.text, backgroundColor: colors.cardSecondary, borderColor: colors.border }]}
               value={pinMode === 'disable' ? pinInput : (pinInput.length === 4 ? pinConfirm : pinInput)}
-              onChangeText={(text) => {
+              onChangeText={async (text) => {
                 const digits = text.replace(/\D/g, '').slice(0, 4);
                 setPinError('');
                 if (pinMode === 'disable') {
                   setPinInput(digits);
                   if (digits.length === 4) {
-                    if (verifyPin(digits)) {
+                    const ok = await verifyPin(digits);
+                    if (ok) {
                       clearPin();
                       setShowPinSetup(false);
                     } else {
-                      setPinError('PIN error');
+                      setPinError(t('settings.pinError') || 'PIN error');
                       setPinInput('');
                     }
                   }

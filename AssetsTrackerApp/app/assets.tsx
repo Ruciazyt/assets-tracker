@@ -76,8 +76,8 @@ export default function AssetsScreen() {
       <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
         {filteredAssets.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>暂无资产</Text>
-            <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>点击下方按钮添加资产</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('assets.noData')}</Text>
+            <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>{t('assets.addHint')}</Text>
           </View>
         ) : filteredAssets.map((asset: any) => (
           <TouchableOpacity key={asset.id} onLongPress={() => handleDelete(asset.id)}>
@@ -89,7 +89,7 @@ export default function AssetsScreen() {
                 </View>
                 <View style={styles.assetRow}>
                   <View>
-                    <Text style={[styles.assetLabel, { color: colors.textSecondary }]}>金额</Text>
+                    <Text style={[styles.assetLabel, { color: colors.textSecondary }]}>{t('assets.amount')}</Text>
                     <Text style={[styles.assetAmount, { color: colors.text }]}>{formatCurrency(asset.amount)}</Text>
                   </View>
                   {asset.note && (

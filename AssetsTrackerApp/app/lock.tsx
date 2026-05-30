@@ -48,13 +48,13 @@ export default function LockScreen() {
     ]).start(() => setErrorMsg(''));
   };
 
-  const handlePinChange = (text: string) => {
+  const handlePinChange = async (text: string) => {
     const digits = text.replace(/\D/g, '').slice(0, PIN_LENGTH);
     if (mode === 'confirm') {
       setConfirmPin(digits);
       if (digits.length === PIN_LENGTH) {
         if (digits === pin) {
-          setupPin(digits);
+          await setupPin(digits);
         } else {
           showError('两次输入不一致，请重试');
           setMode('setup');
@@ -69,7 +69,8 @@ export default function LockScreen() {
           setMode('confirm');
         } else {
           // verify
-          if (verifyPin(digits)) {
+          const ok = await verifyPin(digits);
+          if (ok) {
             setPin('');
           } else {
             showError(t('common.error') + ': PIN');

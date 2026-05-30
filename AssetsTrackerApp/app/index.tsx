@@ -361,7 +361,7 @@ export default function HomeScreen() {
         </View>
 
         {historyData.length < 2 ? (
-          <Text style={[styles.noDataText, { color: colors.textMuted }]}>{t('home.noTrendData') || '暂无趋势数据'}</Text>
+          <Text style={[styles.noDataText, { color: colors.textMuted }]}>{t('home.noTrendData')}</Text>
         ) : (
           <TrendChart data={historyData} colors={colors} metric={trendMetric} />
         )}

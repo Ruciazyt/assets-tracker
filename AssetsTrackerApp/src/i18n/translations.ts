@@ -29,6 +29,7 @@ export const translations = {
     'settings.export': '导出数据备份',
     'settings.import': '导入数据备份',
     'settings.clearData': '清除所有数据',
+    'settings.pinError': 'PIN 错误',
     'settings.pin': 'PIN 保护',
     'settings.pinEnabled': '已开启',
     'settings.pinDisabled': '已关闭',
@@ -146,6 +147,7 @@ export const translations = {
     'settings.enterValidPrice': 'Please enter a valid target price',
     'settings.langCN': '中文',
     'settings.langEN': 'English',
+    'settings.pinError': 'PIN error',
     // Home
     'home.totalAssets': 'Total Assets',
     'home.liquidAssets': 'Cash',
