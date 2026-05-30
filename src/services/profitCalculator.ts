@@ -16,6 +16,8 @@ const CACHE_TTL_MS = 25 * 1000; // 缓存25秒，比刷新间隔30s略短
 export interface InvestmentUpdate {
   id: string;
   newPrice: number;
+  /** Persist as lastPrice so next refresh uses it as "yesterday close" */
+  newLastPrice: number;
   dailyPnl: number;
   dailyReturn: number;
   totalPnl: number;
@@ -39,6 +41,7 @@ export async function recalculateInvestment(inv: Investment): Promise<Investment
   const update: InvestmentUpdate = {
     id: inv.id,
     newPrice: inv.lastPrice,
+    newLastPrice: inv.lastPrice,
     dailyPnl: 0,
     dailyReturn: 0,
     totalPnl: 0,
@@ -56,6 +59,7 @@ export async function recalculateInvestment(inv: Investment): Promise<Investment
         );
         if (currentPrice !== null) {
           update.newPrice = currentPrice;
+          update.newLastPrice = currentPrice;
           // lastPrice = yesterday's close, dailyPnl = today's change
           const lastPrice = inv.lastPrice;
           update.dailyPnl = lastPrice > 0 ? (currentPrice - lastPrice) * inv.quantity : 0;
@@ -75,6 +79,7 @@ export async function recalculateInvestment(inv: Investment): Promise<Investment
         );
         if (currentPrice !== null) {
           update.newPrice = currentPrice;
+          update.newLastPrice = currentPrice;
           const lastPrice = inv.lastPrice;
           update.dailyPnl = lastPrice > 0 ? (currentPrice - lastPrice) * inv.share : 0;
           update.dailyReturn = lastPrice > 0 ? ((currentPrice - lastPrice) / lastPrice) * 100 : 0;
@@ -94,6 +99,7 @@ export async function recalculateInvestment(inv: Investment): Promise<Investment
         );
         if (currentPrice !== null) {
           update.newPrice = currentPrice;
+          update.newLastPrice = currentPrice;
           const lastPrice = inv.lastPrice;
           update.dailyPnl = lastPrice > 0 ? (currentPrice - lastPrice) * inv.share : 0;
           update.dailyReturn = lastPrice > 0 ? ((currentPrice - lastPrice) / lastPrice) * 100 : 0;
@@ -112,6 +118,7 @@ export async function recalculateInvestment(inv: Investment): Promise<Investment
         );
         if (currentPrice !== null) {
           update.newPrice = currentPrice;
+          update.newLastPrice = currentPrice;
           const lastPrice = inv.lastPrice;
           update.dailyPnl = lastPrice > 0 ? (currentPrice - lastPrice) * inv.share : 0;
           update.dailyReturn = lastPrice > 0 ? ((currentPrice - lastPrice) / lastPrice) * 100 : 0;
@@ -123,6 +130,7 @@ export async function recalculateInvestment(inv: Investment): Promise<Investment
       case 'yuebao': {
         // 余额宝无实时API，固定为0
         update.newPrice = inv.lastPrice;
+        update.newLastPrice = inv.lastPrice;
         update.dailyPnl = 0;
         update.dailyReturn = 0;
         update.totalPnl = 0;
