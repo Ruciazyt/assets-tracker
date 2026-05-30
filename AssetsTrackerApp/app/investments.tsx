@@ -227,7 +227,7 @@ export default function InvestmentsScreen() {
             <Text style={[styles.emptyDesc, { color: colors.textSecondary }]}>{t('investments.addHint')}</Text>
           </View>
         ) : investments.map((inv: any) => (
-          <TouchableOpacity key={inv.id} onLongPress={() => handleDelete(inv.id)}>
+          <TouchableOpacity key={inv.id} onPress={() => router.push('/investment-detail?id=' + inv.id)} onLongPress={() => handleDelete(inv.id)}>
             <Card style={[styles.invCard, { backgroundColor: colors.card }]}>
               <Card.Content>
                 <View style={styles.invHeader}>
