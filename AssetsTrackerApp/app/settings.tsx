@@ -171,7 +171,7 @@ export default function SettingsScreen() {
         <View style={{ marginTop: spacing.sm }}>
           <AppleTextInput label="接口密钥" value={apiKey} onChangeText={setApiKey} placeholder={aiProvider === 'claude' ? 'sk-ant-...' : 'sk-...'} />
         </View>
-        <AppleTextInput
+<AppleTextInput
           label="接口地址（留空用默认）"
           value={baseUrl}
           onChangeText={setBaseUrl}
@@ -181,7 +181,7 @@ export default function SettingsScreen() {
           label="模型（留空用默认）"
           value={model}
           onChangeText={setModel}
-          placeholder={aiProvider === 'claude' ? 'claude-sonnet-4-20250514' : 'gpt-4o'}
+          placeholder={aiProvider === 'claude' ? 'claude-3-5-sonnet-20241022' : 'gpt-4o'}
         />
         {testResult && (
           <View style={{ backgroundColor: testResult.success ? colors.gainBackground : colors.lossBackground, borderRadius: radius.md, padding: spacing.sm, marginTop: spacing.sm }}>

@@ -70,10 +70,9 @@ async function callClaudeVision(config: AIPricingConfig, imageBase64: string, mi
       'Content-Type': 'application/json',
       'x-api-key': config.apiKey,
       'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: config.model || 'claude-sonnet-4-20250514',
+      model: config.model || 'claude-3-5-sonnet-20241022',
       max_tokens: 1024,
       messages: [{
         role: 'user',

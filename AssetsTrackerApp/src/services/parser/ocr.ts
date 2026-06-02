@@ -84,8 +84,8 @@ Focus on: account names, product names, monetary amounts, balance figures.`;
     }
 
     const json = await response.json();
-    // 支持多种响应格式
-    const text = json?.choices?.[0]?.text ?? json?.text ?? json?.content ?? '';
+    // MiniMax Vision API 返回格式可能是 OpenAI 兼容格式或自定义格式，尝试多种字段
+    const text = json?.choices?.[0]?.text ?? json?.text ?? json?.content ?? json?.result ?? json?.output ?? '';
 
     // Parse JSON from response text
     const jsonMatch = String(text).match(/\{[\s\S]*\}/);
