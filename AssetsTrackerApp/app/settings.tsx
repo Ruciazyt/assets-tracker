@@ -171,7 +171,7 @@ export default function SettingsScreen() {
         <View style={{ marginTop: spacing.sm }}>
           <AppleTextInput label="接口密钥" value={apiKey} onChangeText={setApiKey} placeholder={aiProvider === 'claude' ? 'sk-ant-...' : 'sk-...'} />
         </View>
-<AppleTextInput
+        <AppleTextInput
           label="接口地址（留空用默认）"
           value={baseUrl}
           onChangeText={setBaseUrl}
