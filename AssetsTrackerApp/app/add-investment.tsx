@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -171,11 +172,12 @@ export default function AddInvestmentScreen() {
     >
       {/* AI 图片导入 */}
       <AppleButton
-        title={importing ? '识别中...' : '📸 截图导入'}
+        title={importing ? '识别中...' : '截图导入'}
         onPress={handleImageImport}
         variant="secondary"
         fullWidth
         loading={importing}
+        icon={!importing ? <Ionicons name="camera" size={20} color={colors.primary} /> : undefined}
         style={{ marginBottom: spacing.md }}
       />
 

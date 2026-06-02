@@ -255,7 +255,6 @@ export default function AssetsScreen() {
             <AppleCard
               key={inv.id}
               style={{ marginBottom: spacing.sm }}
-              onPress={() => router.push('/investment-detail?id=' + inv.id)}
               onLongPress={() => handleDeleteInvestment(inv.id)}
             >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

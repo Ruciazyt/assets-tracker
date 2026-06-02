@@ -23,6 +23,7 @@ interface AppleButtonProps {
   fullWidth?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  icon?: React.ReactNode; // 左侧图标
 }
 
 export default function AppleButton({
@@ -34,6 +35,7 @@ export default function AppleButton({
   fullWidth = false,
   style,
   textStyle,
+  icon,
 }: AppleButtonProps) {
   const { colors, spacing, radius, typography } = useAppTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -108,18 +110,21 @@ export default function AppleButton({
             color={textMap[variant]}
           />
         ) : (
-          <Text
-            style={[
-              typography.button,
-              {
-                color: disabled ? colors.textMuted : textMap[variant],
-                textAlign: 'center',
-              },
-              textStyle,
-            ]}
-          >
-            {title}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+            {icon}
+            <Text
+              style={[
+                typography.button,
+                {
+                  color: disabled ? colors.textMuted : textMap[variant],
+                  textAlign: 'center',
+                },
+                textStyle,
+              ]}
+            >
+              {title}
+            </Text>
+          </View>
         )}
       </TouchableOpacity>
     </Animated.View>
